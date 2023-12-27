@@ -19,10 +19,10 @@ If you need to manually install a copy of this plugin, copy the `main.js`, `styl
 
 ## ESLint
 
-[ESLint](https://eslint.org/) is used to maintain code quality. To run it over the entire source tree:
+[ESLint](https://eslint.org/) is used to maintain code quality. To run it over the entire project:
 
 ```sh
-eslint src
+npm run lint
 ```
 
 ## Releases
