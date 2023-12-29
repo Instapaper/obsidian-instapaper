@@ -46,11 +46,17 @@ export async function syncNotes(
             const file = await fileForArticle(article, vault, folder);
             if (!file) continue;
 
-            // Always refresh the file's front matter. This is called for both
-            // new and existing files.
+            // Refresh the file's front matter (for new and existing files).
             fileManager.processFrontMatter(file, (frontmatter) => {
                 frontmatter['url'] = article.url;
                 frontmatter['date'] = new Date(article.time * 1000);
+
+                if (article.pubtime) {
+                    frontmatter['pubdate'] = new Date(article.pubtime * 1000);
+                }
+                if (article.author) {
+                    frontmatter['author'] = article.author;
+                }
             })
 
             // We'll nearly always append the new highlight to the file, but

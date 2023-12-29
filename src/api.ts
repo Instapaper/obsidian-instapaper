@@ -23,17 +23,20 @@ export type InstapaperAccount = {
 }
 
 export type InstapaperBookmark = {
+    author: string;
     bookmark_id: number;
     description: string;
     hash: string;
     private_source: string;
     progress: number;
     progress_timestamp: number;
+    pubtime: number;
     starred: string;
     time: number;
     title: string;
     type: string;
     url: string;
+    words: number;
 }
 
 export type InstapaperHighlight = {
