@@ -29,7 +29,7 @@ export default class InstapaperPlugin extends Plugin {
 
 				if (!checking) {
 					(async () => {
-						const count = await this.runNotesSync();
+						const count = await this.runNotesSync('manual');
 						this.notice(`Updated ${count} Instapaper note${count == 1 ? '' : 's'}`);
 					})();
 				}
@@ -41,7 +41,7 @@ export default class InstapaperPlugin extends Plugin {
 		// Start the notes sync interval and optionally run an immediate sync.
 		this.updateNotesSyncInterval();
 		if (this.settings.notesSyncOnStart && this.settings.token) {
-			this.runNotesSync();
+			this.runNotesSync('on start');
 		}
 	}
 
@@ -92,7 +92,7 @@ export default class InstapaperPlugin extends Plugin {
 
 	// SYNC
 
-	async runNotesSync(): Promise<number> {
+	async runNotesSync(reason: string): Promise<number> {
 		const token = this.settings.token;
 		if (!token) return 0;
 
@@ -101,7 +101,7 @@ export default class InstapaperPlugin extends Plugin {
 			return 0;
 		}
 
-		this.log('Synchronizing notes');
+		this.log(`Synchronizing notes (${reason})`);
 		this.notesSyncInProgress = true;
 		const { cursor, count } = await syncNotes(this, token, this.settings.notesCursor);
 		await this.saveSettings({ notesCursor: cursor });
@@ -122,7 +122,9 @@ export default class InstapaperPlugin extends Plugin {
 		const timeout = this.settings.notesFrequency * 60 * 1000;
 		if (!timeout) return; // manual
 
-		this.notesSyncInterval = window.setInterval(() => this.runNotesSync(), timeout);
+		this.notesSyncInterval = window.setInterval(() => {
+			this.runNotesSync('scheduled')
+		}, timeout);
 		this.registerInterval(this.notesSyncInterval);
 	}
 }
