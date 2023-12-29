@@ -102,7 +102,7 @@ function hasHighlight(content: string, highlight: InstapaperHighlight): boolean 
 }
 
 function contentForHighlight(highlight: InstapaperHighlight): string {
-    let content = '> ' + highlight.text;
+    let content = highlight.text.replace(/^/gm, '> ');
     content += ` [${linkSymbol}](${linkForHighlight(highlight)})`;
     content += "\n\n"
     if (highlight.note) {
