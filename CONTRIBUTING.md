@@ -6,6 +6,7 @@ Contributions are welcome! This guide attempts to answer common question about h
 
 - Clone this repo to `<Vault>/.obsidian/plugins/obsidian-instapaper/`
 - Make sure your NodeJS is at least v16 (`node --version`)
+- Add your [API Credentials](#api-credentials) to a local `.env` file
 - `npm i` or `yarn` to install dependencies
 - `npm run dev` to start compilation in watch mode
 - Reload Obsidian to discover the plugin
@@ -16,6 +17,17 @@ You might also want to install the [Hot-Reload](https://github.com/pjeby/hot-rel
 ### Manual Installation
 
 If you need to manually install a copy of this plugin, copy the `main.js`, `styles.css`, `manifest.json` files to your vault (e.g. `<Vault>/.obsidian/plugins/obsidian-instapaper/`).
+
+## API Credentials
+
+You'll need your own pair of Instapaper API [OAuth credentials](https://www.instapaper.com/api) to use the API.
+
+Add them to a local `.env` file:
+
+```
+INSTAPAPER_CONSUMER_KEY=xxx
+INSTAPAPER_CONSUMER_SECRET=xxx
+```
 
 ## ESLint
 

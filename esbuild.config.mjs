@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
@@ -38,6 +39,10 @@ const context = await esbuild.context({
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
 	outfile: "main.js",
+	define: {
+		'process.env.INSTAPAPER_CONSUMER_KEY': JSON.stringify(process.env['INSTAPAPER_CONSUMER_KEY']),
+		'process.env.INSTAPAPER_CONSUMER_SECRET': JSON.stringify(process.env['INSTAPAPER_CONSUMER_SECRET']),
+	},
 });
 
 if (prod) {
