@@ -15,3 +15,8 @@ jobs:
       run: npm ci
     - name: Lint
       run: npm run lint
+    - name: Build
+      run: npm run build
+      env:
+        INSTAPAPER_CONSUMER_KEY: consumer_key
+        INSTAPAPER_CONSUMER_SECRET: consumer_secret
