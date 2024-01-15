@@ -110,11 +110,19 @@ export default class InstapaperPlugin extends Plugin {
 			return 0;
 		}
 
-		this.log(`Synchronizing notes (${reason})`);
 		this.notesSyncInProgress = true;
-		const { cursor, count } = await syncNotes(this, token, this.settings.notesCursor);
-		await this.saveSettings({ notesCursor: cursor });
-		this.notesSyncInProgress = false;
+		this.log(`Synchronizing notes (${reason})`);
+		let count = 0;
+
+		try {
+			let cursor;
+			({ cursor, count } = await syncNotes(this, token, this.settings.notesCursor));
+			await this.saveSettings({ notesCursor: cursor });
+		} catch (e) {
+			this.log('Notes sync failure:', e);
+		} finally {
+			this.notesSyncInProgress = false;
+		}
 
 		return count;
 	}
