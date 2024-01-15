@@ -78,7 +78,7 @@ async function fileForArticle(
     vault: Vault,
     folder: string,
 ): Promise<TFile | null> {
-    const name = article.title.replace(/[\\/:]/gm, '');
+    const name = article.title.replace(/[\\/:]/gm, '').substring(0, 250);
     const notePath = normalizePath(path.join(folder, name + '.md'))
     const abstractFile = vault.getAbstractFileByPath(notePath);
 
