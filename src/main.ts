@@ -81,6 +81,12 @@ export default class InstapaperPlugin extends Plugin {
 			token: token,
 			account: account,
 		});
+
+		await this.updateNotesSyncInterval();
+		if (this.settings.notesSyncOnStart) {
+			this.runNotesSync('on connect');
+		}
+
 		return account;
 	}
 
@@ -89,6 +95,8 @@ export default class InstapaperPlugin extends Plugin {
 			token: undefined,
 			account: undefined,
 		});
+
+		this.clearNotesSyncInterval();
 	}
 
 	// SYNC
@@ -111,14 +119,18 @@ export default class InstapaperPlugin extends Plugin {
 		return count;
 	}
 
+	clearNotesSyncInterval() {
+		window.clearInterval(this.notesSyncInterval);
+		this.notesSyncInterval = undefined;
+	}
+
 	async updateNotesSyncInterval() {
 		this.log('Setting notes sync frequency to',
 			this.settings.notesFrequency,
 			this.settings.notesFrequency ? 'minutes' : '(manual)'
 		);
 
-		window.clearInterval(this.notesSyncInterval);
-		this.notesSyncInterval = undefined;
+		this.clearNotesSyncInterval();
 
 		const timeout = this.settings.notesFrequency * 60 * 1000;
 		if (!timeout) return; // manual
