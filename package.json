@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-instapaper",
 	"version": "0.5.1",
-	"description": "This is the official Instapaper plugin for Obsidian.",
+	"description": "Official Instapaper plugin for Obsidian.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

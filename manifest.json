@@ -1,9 +1,9 @@
 {
-	"id": "obsidian-instapaper",
+	"id": "instapaper",
 	"name": "Instapaper",
 	"version": "0.5.1",
 	"minAppVersion": "0.15.0",
-	"description": "This is the official Instapaper plugin for Obsidian.",
+	"description": "Instapaper integration for Obsidian.",
 	"author": "Instapaper",
 	"authorUrl": "https://www.instapaper.com",
 	"isDesktopOnly": false
