@@ -49,10 +49,9 @@ export async function syncNotes(
             // Refresh the file's front matter (for new and existing files).
             fileManager.processFrontMatter(file, (frontmatter) => {
                 frontmatter['url'] = article.url;
-                frontmatter['date'] = new Date(article.time * 1000);
-
+                frontmatter['date'] = formatTimestamp(article.time);
                 if (article.pubtime) {
-                    frontmatter['pubdate'] = new Date(article.pubtime * 1000);
+                    frontmatter['pubdate'] = formatTimestamp(article.pubtime);
                 }
                 if (article.author) {
                     frontmatter['author'] = article.author;
@@ -110,4 +109,11 @@ function contentForHighlight(highlight: InstapaperHighlight): string {
     }
 
     return content;
+}
+
+function formatTimestamp(timestamp: number): string {
+    const date = new Date(timestamp * 1000);
+    return `${date.getFullYear().toString().padStart(4, '0')}-`
+        + `${(date.getMonth() + 1).toString().padStart(2, '0')}-`
+        + `${date.getDate().toString().padStart(2, '0')}`;
 }
