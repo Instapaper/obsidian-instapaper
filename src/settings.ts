@@ -68,7 +68,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Sync on start')
-            .setDesc('Automatically sync when Obsidian starts')
+            .setDesc('Automatically sync when Obsidian starts or an account is connected')
             .addToggle((toggle) => {
                 toggle.setValue(this.plugin.settings.notesSyncOnStart);
                 toggle.onChange(async (value) => {
