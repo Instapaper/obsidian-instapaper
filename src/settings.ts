@@ -1,4 +1,4 @@
-import { App, ButtonComponent, Modal, PluginSettingTab, Setting, TextComponent, normalizePath } from "obsidian";
+import { App, ButtonComponent, Modal, PluginSettingTab, Setting, TFolder, TextComponent, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount } from "./api";
 
@@ -42,11 +42,18 @@ export class InstapaperSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Notes folder')
-            .setDesc('Folder in which notes and highlights will be synced')
+            .setDesc('Folder in which your notes and highlights will be synced')
             .addText((text) => {
                 text.setValue(this.plugin.settings.notesFolder)
                 text.onChange(async (value) => {
-                    await this.plugin.saveSettings({ notesFolder: normalizePath(value) });
+                    const previousPath = this.plugin.settings.notesFolder;
+                    const newPath = normalizePath(value);
+                    await this.plugin.saveSettings({ notesFolder: newPath });
+
+                    const previousFile = this.app.vault.getAbstractFileByPath(previousPath);
+                    if (previousFile instanceof TFolder) {
+                        await previousFile.vault.rename(previousFile, newPath);
+                    }
                 })
             });
 
