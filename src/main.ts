@@ -20,7 +20,7 @@ export default class InstapaperPlugin extends Plugin {
 		this.addSettingTab(new InstapaperSettingTab(this.app, this));
 
 		this.addCommand({
-			id: 'instapaper-sync-notes',
+			id: 'sync-notes',
 			name: 'Sync notes',
 			checkCallback: (checking: boolean) => {
 				const token = this.settings.token;
