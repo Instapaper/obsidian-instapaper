@@ -1,7 +1,6 @@
 import { TFile, TFolder, Vault, normalizePath } from "obsidian";
 import type InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight } from "./api";
-import path from "path";
 
 const linkSymbol = '§'; // '↗'; // '↪';
 
@@ -78,7 +77,7 @@ async function fileForArticle(
     folder: string,
 ): Promise<TFile | null> {
     const name = article.title.replace(/[\\/:]/gm, '').substring(0, 250);
-    const notePath = normalizePath(path.join(folder, name + '.md'))
+    const notePath = normalizePath(`${folder}/${name}.md`);
     const abstractFile = vault.getAbstractFileByPath(notePath);
 
     if (abstractFile instanceof TFile) {
