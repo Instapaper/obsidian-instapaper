@@ -32,13 +32,12 @@ export class InstapaperSettingTab extends PluginSettingTab {
         const { containerEl } = this;
 
         containerEl.empty();
-        containerEl.createEl('h1', { text: 'Instapaper' });
 
         // ACCOUNT
         this.addAccountSetting(containerEl);
 
         // NOTES SYNC
-        containerEl.createEl('h2', { text: 'Notes Sync' });
+        new Setting(containerEl).setName('Notes Sync').setHeading();
 
         new Setting(containerEl)
             .setName('Notes folder')
