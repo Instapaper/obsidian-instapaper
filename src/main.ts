@@ -45,7 +45,9 @@ export default class InstapaperPlugin extends Plugin {
 		// folders) that are produced by the sync operation.
 		await this.updateNotesSyncInterval();
 		if (this.settings.notesSyncOnStart && this.settings.token) {
-			window.setTimeout(async () => { await this.runNotesSync('on start') }, 100);
+			this.app.workspace.onLayoutReady(async () => {
+				await this.runNotesSync('on start');
+			})
 		}
 	}
 
