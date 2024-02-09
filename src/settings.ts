@@ -33,10 +33,54 @@ export class InstapaperSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        // ACCOUNT
-        this.addAccountSetting(containerEl);
+        this.addAccountSettings(containerEl);
 
-        // NOTES SYNC
+        if (this.plugin.settings.account) {
+            this.addNotesSettings(containerEl);
+        }
+    }
+
+    private addAccountSettings(containerEl: HTMLElement): Setting {
+        const setting = new Setting(containerEl)
+            .setName('Instapaper account');
+
+        if (this.plugin.settings.account) {
+            return setting
+                .setDesc(`Connected as: ${this.plugin.settings.account.username}`)
+                .addButton((button) => {
+                    button.setButtonText('Disconnect');
+                    button.setTooltip('Disconnect your Instapaper account')
+                    button.onClick(async () => {
+                        this.plugin.disconnectAccount();
+                        this.plugin.notice('Disconnected Instapaper account');
+                        this.display();
+                    })
+                });
+        }
+
+        return setting
+            .setDesc('Connect your Instapaper account')
+            .addButton((button) => {
+                button.setButtonText('Connect');
+                button.setTooltip('Connect your Instapaper account')
+                button.setCta();
+                button.onClick(async () => {
+                    new ConnectAccountModal(this.app, async (username: string, password: string) => {
+                        try {
+                            const account = await this.plugin.connectAccount(username, password);
+                            this.plugin.notice(`Connected Instapaper account: ${account.username}`);
+                        } catch (e) {
+                            console.log('Failed to connect account:', e);
+                            this.plugin.disconnectAccount();
+                            this.plugin.notice('Failed to connect Instapaper account');
+                        }
+                        this.display();
+                    }).open();
+                })
+            });
+    }
+
+    private addNotesSettings(containerEl: HTMLElement) {
         new Setting(containerEl).setName('Notes Sync').setHeading();
 
         new Setting(containerEl)
@@ -80,46 +124,6 @@ export class InstapaperSettingTab extends PluginSettingTab {
                 toggle.onChange(async (value) => {
                     await this.plugin.saveSettings({ notesSyncOnStart: value });
                 });
-            });
-    }
-
-    private addAccountSetting(containerEl: HTMLElement): Setting {
-        const setting = new Setting(containerEl)
-            .setName('Instapaper account');
-
-        if (this.plugin.settings.account) {
-            return setting
-                .setDesc(`Connected as: ${this.plugin.settings.account.username}`)
-                .addButton((button) => {
-                    button.setButtonText('Disconnect');
-                    button.setTooltip('Disconnect your Instapaper account')
-                    button.onClick(async () => {
-                        this.plugin.disconnectAccount();
-                        this.plugin.notice('Disconnected Instapaper account');
-                        this.display();
-                    })
-                });
-        }
-
-        return setting
-            .setDesc('Connect your Instapaper account')
-            .addButton((button) => {
-                button.setButtonText('Connect');
-                button.setTooltip('Connect your Instapaper account')
-                button.setCta();
-                button.onClick(async () => {
-                    new ConnectAccountModal(this.app, async (username: string, password: string) => {
-                        try {
-                            const account = await this.plugin.connectAccount(username, password);
-                            this.plugin.notice(`Connected Instapaper account: ${account.username}`);
-                        } catch (e) {
-                            console.log('Failed to connect account:', e);
-                            this.plugin.disconnectAccount();
-                            this.plugin.notice('Failed to connect Instapaper account');
-                        }
-                        this.display();
-                    }).open();
-                })
             });
     }
 }
