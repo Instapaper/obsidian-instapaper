@@ -14,7 +14,9 @@ It integrates with your Instapaper account and allows you to:
 
 ## Feedback
 
-Please send feedback to: support@help.instapaper.com
+Please send general feedback to: support@help.instapaper.com
+
+[Code contributions](CONTRIBUTING.md) for improvements are also welcome.
 
 ## License
 
