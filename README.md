@@ -8,9 +8,9 @@ It integrates with your Instapaper account and allows you to:
 
 ## Setup
 
-1. Install the [Instapaper](https://obsidian.md/plugins?id=instapaper) plugin within Obsidian (via "Community plugins").
-2. Enable the installed "Instapaper" plugin via the Obsidian Settings window.
-3. Click "Options" (or navigate to "Instapaper" plugin settings window) to connect your Instapaper account, start syncing highlights, and manage other options.
+1. Install the [Instapaper](https://obsidian.md/plugins?id=instapaper) plugin within Obsidian (**Settings → Community plugins**).
+2. Enable the installed "Instapaper" plugin (**Settings → Community plugins → Installed plugins**).
+3. Click the "Options" icon (or go to **Settings → Instapaper**) to connect your Instapaper account, start syncing highlights, and manage other options.
 
 ## Feedback
 
