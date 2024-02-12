@@ -51,7 +51,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     button.setButtonText('Disconnect');
                     button.setTooltip('Disconnect your Instapaper account')
                     button.onClick(async () => {
-                        this.plugin.disconnectAccount();
+                        await this.plugin.disconnectAccount();
                         this.plugin.notice('Disconnected Instapaper account');
                         this.display();
                     })
@@ -71,7 +71,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                             this.plugin.notice(`Connected Instapaper account: ${account.username}`);
                         } catch (e) {
                             console.log('Failed to connect account:', e);
-                            this.plugin.disconnectAccount();
+                            await this.plugin.disconnectAccount();
                             this.plugin.notice('Failed to connect Instapaper account');
                         }
                         this.display();
@@ -131,9 +131,9 @@ export class InstapaperSettingTab extends PluginSettingTab {
 class ConnectAccountModal extends Modal {
     username: string
     password: string
-    onConnect: (username: string, password: string) => void;
+    onConnect: (username: string, password: string) => Promise<void>;
 
-    constructor(app: App, onConnect: (username: string, password: string) => void) {
+    constructor(app: App, onConnect: (username: string, password: string) => Promise<void>) {
         super(app);
         this.onConnect = onConnect;
     }
@@ -173,9 +173,11 @@ class ConnectAccountModal extends Modal {
                 button.setCta();
                 button.setButtonText("Connect");
                 button.setDisabled(true);
-                button.onClick(() => {
+                button.onClick(async () => {
+                    button.setButtonText("Connecting ...");
+                    button.setDisabled(true);
+                    await this.onConnect(this.username, this.password);
                     this.close();
-                    this.onConnect(this.username, this.password);
                 })
             }).components[0] as ButtonComponent;
     }
