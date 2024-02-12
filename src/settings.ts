@@ -141,7 +141,7 @@ class ConnectAccountModal extends Modal {
     onOpen() {
         const { contentEl } = this;
 
-        contentEl.createEl("h1", { text: "Instapaper account" });
+        new Setting(contentEl).setName('Instapaper account').setHeading();
 
         function updateConnectButton() {
             const valid = usernameEl.checkValidity() && passwordEl.checkValidity();
