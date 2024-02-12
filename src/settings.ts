@@ -149,7 +149,7 @@ class ConnectAccountModal extends Modal {
         }
 
         const usernameEl = (new Setting(contentEl)
-            .setName("Email or username")
+            .setName("Email")
             .addText((text) => {
                 text.inputEl.required = true;
                 text.onChange((value) => {
@@ -159,7 +159,7 @@ class ConnectAccountModal extends Modal {
             }).components[0] as TextComponent).inputEl;
 
         const passwordEl = (new Setting(contentEl)
-            .setName("Password (if you have one)")
+            .setName("Password")
             .addText((text) => {
                 text.inputEl.type = "password"
                 text.onChange((value) => {
