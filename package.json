@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-instapaper",
-	"version": "0.6.2",
+	"version": "0.6.3",
 	"description": "Official Instapaper plugin for Obsidian.",
 	"main": "main.js",
 	"scripts": {
