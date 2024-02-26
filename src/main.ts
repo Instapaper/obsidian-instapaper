@@ -39,11 +39,7 @@ export default class InstapaperPlugin extends Plugin {
 			},
 		})
 
-		// Start the notes sync interval and optionally run an immediate sync.
-		// We delay the sync briefly to allow Obsidian time to finish loading;
-		// otherwise, it doesn't appear to respond to Vault updates (e.g. new
-		// folders) that are produced by the sync operation.
-		await this.updateNotesSyncInterval();
+		// Optionally run an immediate sync as soon as the workspace is ready.
 		if (this.settings.notesSyncOnStart && this.settings.token) {
 			this.app.workspace.onLayoutReady(async () => {
 				await this.runNotesSync('on start');
@@ -67,6 +63,7 @@ export default class InstapaperPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		await this.updateNotesSyncInterval();
 	}
 
 	async saveSettings(updates?: Partial<InstapaperPluginSettings>) {
@@ -75,6 +72,11 @@ export default class InstapaperPlugin extends Plugin {
 			...updates,
 		}
 		await this.saveData(this.settings);
+	}
+
+	async onExternalSettingsChange() {
+		this.log('external settings change');
+		await this.loadSettings();
 	}
 
 	// ACCOUNT
