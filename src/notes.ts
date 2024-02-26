@@ -1,4 +1,4 @@
-import { TFile, TFolder, Vault, normalizePath } from "obsidian";
+import { TFile, Vault, normalizePath } from "obsidian";
 import type InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight } from "./api";
 
@@ -77,18 +77,10 @@ async function fileForArticle(
     folder: string,
 ): Promise<TFile | null> {
     const name = article.title.replace(/[\\/:]/gm, '').substring(0, 250);
-    const notePath = normalizePath(`${folder}/${name}.md`);
-    const abstractFile = vault.getAbstractFileByPath(notePath);
+    const path = normalizePath(`${folder}/${name}.md`);
+    const file = vault.getFileByPath(path);
 
-    if (abstractFile instanceof TFile) {
-        return abstractFile;
-    }
-    if (abstractFile instanceof TFolder) {
-        console.log('%s is a folder; expected a file', abstractFile.path);
-        return null;
-    }
-
-    return vault.create(notePath, '');
+    return file || vault.create(path, '');
 }
 
 function linkForHighlight(highlight: InstapaperHighlight): string {
