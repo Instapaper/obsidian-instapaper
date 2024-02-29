@@ -5,19 +5,19 @@ import type { InstapaperAccessToken, InstapaperAccount } from "./api";
 export interface InstapaperPluginSettings {
     token?: InstapaperAccessToken;
     account?: InstapaperAccount;
+    syncFrequency: number;
+    syncOnStart: boolean;
     notesFolder: string;
     notesCursor: number;
-    notesFrequency: number;
-    notesSyncOnStart: boolean;
 }
 
 export const DEFAULT_SETTINGS: InstapaperPluginSettings = {
     token: undefined,
     account: undefined,
+    syncFrequency: 0,
+    syncOnStart: true,
     notesFolder: 'Instapaper Notes',
     notesCursor: 0,
-    notesFrequency: 0,
-    notesSyncOnStart: true,
 }
 
 export class InstapaperSettingTab extends PluginSettingTab {
@@ -36,6 +36,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
         this.addAccountSettings(containerEl);
 
         if (this.plugin.settings.account) {
+            this.addSyncSettings(containerEl);
             this.addNotesSettings(containerEl);
         }
     }
@@ -80,8 +81,38 @@ export class InstapaperSettingTab extends PluginSettingTab {
             });
     }
 
+    private addSyncSettings(containerEl: HTMLElement) {
+        new Setting(containerEl).setName('Sync').setHeading();
+
+        new Setting(containerEl)
+            .setName('Sync frequency')
+            .setDesc('The frequency at which Obsidian (when running) will automatically sync your data')
+            .addDropdown((dropdown) => {
+                dropdown.addOption("0", "Manual");
+                dropdown.addOption("60", "Hourly");
+                dropdown.addOption("720", "Every 12 hours")
+                dropdown.addOption("1440", "Every 24 hours")
+
+                dropdown.setValue(Number(this.plugin.settings.syncFrequency).toString());
+                dropdown.onChange(async (value) => {
+                    await this.plugin.saveSettings({ syncFrequency: parseInt(value) });
+                    await this.plugin.updateSyncInterval();
+                });
+            });
+
+        new Setting(containerEl)
+            .setName('Sync on start')
+            .setDesc('Automatically sync when Obsidian starts or an account is connected')
+            .addToggle((toggle) => {
+                toggle.setValue(this.plugin.settings.syncOnStart);
+                toggle.onChange(async (value) => {
+                    await this.plugin.saveSettings({ syncOnStart: value });
+                });
+            });
+    }
+
     private addNotesSettings(containerEl: HTMLElement) {
-        new Setting(containerEl).setName('Notes Sync').setHeading();
+        new Setting(containerEl).setName('Notes').setHeading();
 
         new Setting(containerEl)
             .setName('Notes folder')
@@ -98,32 +129,6 @@ export class InstapaperSettingTab extends PluginSettingTab {
                         await previousFile.vault.rename(previousFile, newPath);
                     }
                 })
-            });
-
-        new Setting(containerEl)
-            .setName('Sync frequency')
-            .setDesc('The frequency at which Obsidian (when running) will automatically sync your notes')
-            .addDropdown((dropdown) => {
-                dropdown.addOption("0", "Manual");
-                dropdown.addOption("60", "Hourly");
-                dropdown.addOption("720", "Every 12 hours")
-                dropdown.addOption("1440", "Every 24 hours")
-
-                dropdown.setValue(Number(this.plugin.settings.notesFrequency).toString());
-                dropdown.onChange(async (value) => {
-                    await this.plugin.saveSettings({ notesFrequency: parseInt(value) });
-                    await this.plugin.updateNotesSyncInterval();
-                });
-            });
-
-        new Setting(containerEl)
-            .setName('Sync on start')
-            .setDesc('Automatically sync when Obsidian starts or an account is connected')
-            .addToggle((toggle) => {
-                toggle.setValue(this.plugin.settings.notesSyncOnStart);
-                toggle.onChange(async (value) => {
-                    await this.plugin.saveSettings({ notesSyncOnStart: value });
-                });
             });
     }
 }

@@ -6,8 +6,8 @@ import { syncNotes } from './notes';
 export default class InstapaperPlugin extends Plugin {
 	settings: InstapaperPluginSettings;
 	api: InstapaperAPI;
-	notesSyncInterval?: number;
-	notesSyncInProgress = false;
+	syncInterval?: number;
+	syncInProgress = false;
 
 	async onload() {
 		this.api = new InstapaperAPI(
@@ -20,8 +20,8 @@ export default class InstapaperPlugin extends Plugin {
 		this.addSettingTab(new InstapaperSettingTab(this.app, this));
 
 		this.addCommand({
-			id: 'sync-notes',
-			name: 'Sync notes',
+			id: 'sync',
+			name: 'Sync',
 			checkCallback: (checking: boolean) => {
 				const token = this.settings.token;
 				if (!token) {
@@ -30,8 +30,9 @@ export default class InstapaperPlugin extends Plugin {
 
 				if (!checking) {
 					(async () => {
-						const count = await this.runNotesSync('manual');
-						this.notice(`Updated ${count} Instapaper note${count == 1 ? '' : 's'}`);
+						const counts = await this.runSync('manual');
+						const total = Object.values(counts).reduce((a, b) => a + b);
+						this.notice(`Updated ${total} Instapaper item${total == 1 ? '' : 's'}`);
 					})();
 				}
 
@@ -40,9 +41,9 @@ export default class InstapaperPlugin extends Plugin {
 		})
 
 		// Optionally run an immediate sync as soon as the workspace is ready.
-		if (this.settings.notesSyncOnStart && this.settings.token) {
+		if (this.settings.syncOnStart && this.settings.token) {
 			this.app.workspace.onLayoutReady(async () => {
-				await this.runNotesSync('on start');
+				await this.runSync('on start');
 			})
 		}
 	}
@@ -62,8 +63,27 @@ export default class InstapaperPlugin extends Plugin {
 	// SETTINGS
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		await this.updateNotesSyncInterval();
+		const data = await this.loadData();
+
+		// Migrate pre-0.7.0 settings
+		let needsSave = false;
+		if (Object.hasOwnProperty.call(data, 'notesFrequency')) {
+			data['syncFrequency'] = data['notesFrequency'];
+			delete data['notesFrequency'];
+			needsSave = true;
+		}
+		if (Object.hasOwnProperty.call(data, 'notesSyncOnStart')) {
+			data['syncOnStart'] = data['notesSyncOnStart'];
+			delete data['notesSyncOnStart'];
+			needsSave = true;
+		}
+
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+		if (needsSave) {
+			await this.saveSettings();
+		}
+
+		await this.updateSyncInterval();
 	}
 
 	async saveSettings(updates?: Partial<InstapaperPluginSettings>) {
@@ -89,9 +109,9 @@ export default class InstapaperPlugin extends Plugin {
 			account: account,
 		});
 
-		await this.updateNotesSyncInterval();
-		if (this.settings.notesSyncOnStart) {
-			await this.runNotesSync('on connect');
+		await this.updateSyncInterval();
+		if (this.settings.syncOnStart) {
+			await this.runSync('on connect');
 		}
 
 		return account;
@@ -103,56 +123,57 @@ export default class InstapaperPlugin extends Plugin {
 			account: undefined,
 		});
 
-		this.clearNotesSyncInterval();
+		this.clearSyncInterval();
 	}
 
 	// SYNC
 
-	async runNotesSync(reason: string): Promise<number> {
-		const token = this.settings.token;
-		if (!token) return 0;
+	async runSync(reason: string): Promise<{ notes: number }> {
+		const counts = { notes: 0 };
 
-		if (this.notesSyncInProgress) {
-			this.log('Notes sync is already in progress');
-			return 0;
+		const token = this.settings.token;
+		if (!token) return counts;
+
+		if (this.syncInProgress) {
+			this.log('sync is already in progress');
+			return counts;
 		}
 
-		this.notesSyncInProgress = true;
-		this.log(`Synchronizing notes (${reason})`);
-		let count = 0;
+		this.syncInProgress = true;
+		this.log(`synchronizing (${reason})`);
 
 		try {
-			let cursor;
-			({ cursor, count } = await syncNotes(this, token, this.settings.notesCursor));
+			const { cursor, count } = await syncNotes(this, token, this.settings.notesCursor);
+			counts.notes = count;
 			await this.saveSettings({ notesCursor: cursor });
 		} catch (e) {
-			this.log('Notes sync failure:', e);
+			this.log('sync failure:', e);
 		} finally {
-			this.notesSyncInProgress = false;
+			this.syncInProgress = false;
 		}
 
-		return count;
+		return counts;
 	}
 
-	clearNotesSyncInterval() {
-		window.clearInterval(this.notesSyncInterval);
-		this.notesSyncInterval = undefined;
+	clearSyncInterval() {
+		window.clearInterval(this.syncInterval);
+		this.syncInterval = undefined;
 	}
 
-	async updateNotesSyncInterval() {
-		this.log('Setting notes sync frequency to',
-			this.settings.notesFrequency,
-			this.settings.notesFrequency ? 'minutes' : '(manual)'
+	async updateSyncInterval() {
+		this.log('setting sync frequency to',
+			this.settings.syncFrequency,
+			this.settings.syncFrequency ? 'minutes' : '(manual)'
 		);
 
-		this.clearNotesSyncInterval();
+		this.clearSyncInterval();
 
-		const timeout = this.settings.notesFrequency * 60 * 1000;
+		const timeout = this.settings.syncFrequency * 60 * 1000;
 		if (!timeout) return; // manual
 
-		this.notesSyncInterval = window.setInterval(() => {
-			this.runNotesSync('scheduled')
+		this.syncInterval = window.setInterval(() => {
+			this.runSync('scheduled')
 		}, timeout);
-		this.registerInterval(this.notesSyncInterval);
+		this.registerInterval(this.syncInterval);
 	}
 }
