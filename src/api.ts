@@ -119,6 +119,28 @@ export class InstapaperAPI {
         return data[0];
     }
 
+    async addBookmark(
+        token: InstapaperAccessToken,
+        data: {
+            url: string,
+            title?: string,
+            description?: string,
+            folder_id?: number,
+        },
+    ): Promise<InstapaperBookmark> {
+        const response = await this.fetch(
+            {
+                url: `${this.options.baseURL}/1.1/bookmarks/add`,
+                method: 'POST',
+                data: data,
+            },
+            token,
+        );
+
+        const bookmarks = await response.json as [InstapaperBookmark]
+        return bookmarks[0];
+    }
+
     async getHighlights(
         token: InstapaperAccessToken,
         data?: {

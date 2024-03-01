@@ -19,6 +19,27 @@ export default class InstapaperPlugin extends Plugin {
 		await this.loadSettings();
 		this.addSettingTab(new InstapaperSettingTab(this.app, this));
 
+		this.registerEvent(
+			this.app.workspace.on('url-menu', (menu, url) => {
+				const token = this.settings.token;
+				if (!token) return;
+
+				menu.addItem((item) => {
+					item
+						.setTitle("Save to Instapaper")
+						.setIcon("bookmark-plus")
+						.onClick(async () => {
+							try {
+								const bookmark = await this.api.addBookmark(token, { url })
+								this.notice(`Saved "${bookmark.title}" to Instapaper`);
+							} catch (e) {
+								this.log('failed to add bookmark:', e);
+							}
+						});
+				});
+			})
+		);
+
 		this.addCommand({
 			id: 'sync',
 			name: 'Sync',
