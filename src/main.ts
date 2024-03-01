@@ -67,12 +67,12 @@ export default class InstapaperPlugin extends Plugin {
 
 		// Migrate pre-0.7.0 settings
 		let needsSave = false;
-		if (Object.hasOwnProperty.call(data, 'notesFrequency')) {
+		if (data && Object.hasOwnProperty.call(data, 'notesFrequency')) {
 			data['syncFrequency'] = data['notesFrequency'];
 			delete data['notesFrequency'];
 			needsSave = true;
 		}
-		if (Object.hasOwnProperty.call(data, 'notesSyncOnStart')) {
+		if (data && Object.hasOwnProperty.call(data, 'notesSyncOnStart')) {
 			data['syncOnStart'] = data['notesSyncOnStart'];
 			delete data['notesSyncOnStart'];
 			needsSave = true;
