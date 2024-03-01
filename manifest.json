@@ -1,7 +1,7 @@
 {
 	"id": "instapaper",
 	"name": "Instapaper",
-	"version": "0.7.0",
+	"version": "0.7.1",
 	"minAppVersion": "1.5.7",
 	"description": "Instapaper integration for Obsidian.",
 	"author": "Instapaper",
