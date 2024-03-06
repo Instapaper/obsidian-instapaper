@@ -33,6 +33,7 @@ export default class InstapaperPlugin extends Plugin {
 								const bookmark = await this.api.addBookmark(token, { url })
 								this.notice(`Saved "${bookmark.title}" to Instapaper`);
 							} catch (e) {
+								this.notice(`Unable to save to Instapaper`);
 								this.log('failed to add bookmark:', e);
 							}
 						});
