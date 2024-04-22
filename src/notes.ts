@@ -2,7 +2,7 @@ import { TFile, Vault, normalizePath } from "obsidian";
 import type InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight } from "./api";
 
-const linkSymbol = '§'; // '↗'; // '↪';
+const linkSymbol = '↗';
 
 export async function syncNotes(
     plugin: InstapaperPlugin,
