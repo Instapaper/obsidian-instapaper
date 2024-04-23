@@ -7,6 +7,8 @@ It integrates with your Instapaper account and allows you to:
 - Save URLs from Obsidian notes to your Instapaper account
 - Sync your highlights and notes to your Obsidian vault
 
+<img src="screenshot.png" width="640px"/>
+
 ## Setup
 
 1. Install the [Instapaper](https://obsidian.md/plugins?id=instapaper) plugin within Obsidian (**Settings → Community plugins**).
