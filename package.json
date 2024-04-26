@@ -16,6 +16,7 @@
 	"author": "Instapaper",
 	"license": "MIT",
 	"devDependencies": {
+		"@types/create-hmac": "^1.1.3",
 		"@types/node": "^16.11.6",
 		"@typescript-eslint/eslint-plugin": "7.6.0",
 		"@typescript-eslint/parser": "7.6.0",
@@ -27,6 +28,7 @@
 		"typescript": "5.4.2"
 	},
 	"dependencies": {
+		"create-hmac": "^1.1.7",
 		"oauth-1.0a": "^2.2.6"
 	}
 }
