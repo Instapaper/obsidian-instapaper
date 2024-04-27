@@ -70,15 +70,23 @@ export class InstapaperAPI {
         const authorization = this.oauth.authorize(request, token);
 
         let url = request.url;
-        if (request.data && request.method == 'GET') {
-            url += '?' + new URLSearchParams(request.data).toString();
+        let body: string | undefined;
+        let contentType: string | undefined;
+
+        if (request.data) {
+            if (request.method == 'GET') {
+                url += '?' + new URLSearchParams(request.data).toString();
+            } else {
+                body = new URLSearchParams(request.data).toString();
+                contentType = "application/x-www-form-urlencoded";
+            }
         }
 
         return await requestUrl({
             url: url,
             method: request.method,
-            contentType: "application/x-www-form-urlencoded",
-            body: request.data ? new URLSearchParams(request.data).toString() : undefined,
+            contentType: contentType,
+            body: body,
             headers: { ...this.oauth.toHeader(authorization) },
             throw: true,
         });
