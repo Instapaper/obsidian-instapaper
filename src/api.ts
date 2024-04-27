@@ -1,5 +1,5 @@
-import createHmac from "create-hmac";
 import OAuth from "oauth-1.0a";
+import hmacsha1 from "hmacsha1";
 import { requestUrl } from "obsidian";
 
 export interface InstapaperClientOptions {
@@ -59,9 +59,7 @@ export class InstapaperAPI {
             },
             signature_method: "HMAC-SHA1",
             hash_function(base_string: string, key: string) {
-                return createHmac("sha1", key)
-                    .update(base_string)
-                    .digest("base64");
+                return hmacsha1(key, base_string);
             },
             parameter_seperator: ", "
         });
