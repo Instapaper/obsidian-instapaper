@@ -54,7 +54,17 @@ export default class InstapaperPlugin extends Plugin {
 					(async () => {
 						const counts = await this.runSync('manual');
 						const total = Object.values(counts).reduce((a, b) => a + b);
-						this.notice(`Updated ${total} Instapaper item${total == 1 ? '' : 's'}`);
+						switch (total) {
+							case 0:
+								this.notice(`No new Instapaper notes`);
+								break;
+							case 1:
+								this.notice(`Updated 1 Instapaper note`);
+								break;
+							default:
+								this.notice(`Updated ${total} Instapaper notes`);
+								break;
+						}
 					})();
 				}
 
