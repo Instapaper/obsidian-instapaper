@@ -76,7 +76,7 @@ async function fileForArticle(
     vault: Vault,
     folder: string,
 ): Promise<TFile | null> {
-    const name = article.title.replace(/[\\/:]/gm, '').substring(0, 250);
+    const name = article.title.replace(/[\\/:<>?|*]/gm, '').substring(0, 250);
     const path = normalizePath(`${folder}/${name}.md`);
     const file = vault.getFileByPath(path);
 
