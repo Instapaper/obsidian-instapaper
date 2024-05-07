@@ -42,8 +42,15 @@ export async function syncNotes(
             const article = bookmarks[highlight.article_id];
             if (!article) continue;
 
-            const file = await fileForArticle(article, vault, folder);
-            if (!file) continue;
+            // Resolve a TFile for this article. This will either be an
+            // existing file or a new, empty file.
+            let file: TFile;
+            try {
+                file = await fileForArticle(article, vault, folder);
+            } catch (e) {
+                plugin.log(`fileForArticle("${article.title}"):`, e);
+                continue;
+            }
 
             // Refresh the file's front matter (for new and existing files).
             fileManager.processFrontMatter(file, (frontmatter) => {
@@ -75,7 +82,7 @@ async function fileForArticle(
     article: InstapaperBookmark,
     vault: Vault,
     folder: string,
-): Promise<TFile | null> {
+): Promise<TFile> {
     const name = article.title.replace(/[\\/:<>?|*"]/gm, '').substring(0, 250);
     const path = normalizePath(`${folder}/${name}.md`);
     const file = vault.getFileByPath(path);
