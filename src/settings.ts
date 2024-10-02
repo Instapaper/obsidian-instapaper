@@ -86,7 +86,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Sync frequency')
-            .setDesc('The frequency at which Obsidian (when running) will automatically sync your data')
+            .setDesc('The frequency at which Obsidian (when running) will automatically sync your data.')
             .addDropdown((dropdown) => {
                 dropdown.addOption("0", "Manual");
                 dropdown.addOption("60", "Hourly");
@@ -102,7 +102,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Sync on start')
-            .setDesc('Automatically sync when Obsidian starts or an account is connected')
+            .setDesc('Automatically sync when Obsidian starts or an account is connected.')
             .addToggle((toggle) => {
                 toggle.setValue(this.plugin.settings.syncOnStart);
                 toggle.onChange(async (value) => {
@@ -116,7 +116,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Notes folder')
-            .setDesc('Folder in which your notes and highlights will be synced')
+            .setDesc('The folder in which your notes and highlights will be synced.')
             .addText((text) => {
                 text.setValue(this.plugin.settings.notesFolder)
                 text.onChange(async (value) => {
