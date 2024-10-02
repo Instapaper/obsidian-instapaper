@@ -39,6 +39,7 @@ const context = await esbuild.context({
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
 	outfile: "main.js",
+	minify: prod,
 	define: {
 		'process.env.INSTAPAPER_CONSUMER_KEY': JSON.stringify(process.env['INSTAPAPER_CONSUMER_KEY']),
 		'process.env.INSTAPAPER_CONSUMER_SECRET': JSON.stringify(process.env['INSTAPAPER_CONSUMER_SECRET']),
