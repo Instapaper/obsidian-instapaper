@@ -3,7 +3,7 @@
 	"name": "Instapaper",
 	"version": "1.0.6",
 	"minAppVersion": "1.5.7",
-	"description": "Instapaper integration for Obsidian.",
+	"description": "Instapaper integration.",
 	"author": "Instapaper",
 	"authorUrl": "https://www.instapaper.com",
 	"isDesktopOnly": false
