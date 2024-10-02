@@ -1,4 +1,4 @@
-import { TFile, Vault, normalizePath } from "obsidian";
+import { TFile, Vault, moment, normalizePath } from "obsidian";
 import type InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight } from "./api";
 
@@ -110,8 +110,5 @@ function contentForHighlight(highlight: InstapaperHighlight): string {
 }
 
 function formatTimestamp(timestamp: number): string {
-    const date = new Date(timestamp * 1000);
-    return `${date.getFullYear().toString().padStart(4, '0')}-`
-        + `${(date.getMonth() + 1).toString().padStart(2, '0')}-`
-        + `${date.getDate().toString().padStart(2, '0')}`;
+    return moment.unix(timestamp).utc().format("YYYY-MM-DD");
 }
