@@ -84,7 +84,9 @@ export default class InstapaperPlugin extends Plugin {
 	}
 
 	log(message: string, ...args: unknown[]): void {
-		console.log('[instapaper] ' + message, ...args);
+		if (process.env.INSTAPAPER_DEBUG) {
+			console.log('[instapaper] ' + message, ...args);
+		}
 	}
 
 	notice(message: string): Notice {
