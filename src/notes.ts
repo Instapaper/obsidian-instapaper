@@ -56,6 +56,8 @@ export async function syncNotes(
             fileManager.processFrontMatter(file, (frontmatter) => {
                 frontmatter['url'] = article.url;
                 frontmatter['date'] = formatTimestamp(article.time);
+                frontmatter['tags'] = (article.tags.length > 0)
+                    ? article.tags.map((tag) => tag.name) : undefined;
                 if (article.pubtime) {
                     frontmatter['pubdate'] = formatTimestamp(article.pubtime);
                 }
