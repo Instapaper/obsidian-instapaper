@@ -32,11 +32,21 @@ export type InstapaperBookmark = {
     progress_timestamp: number;
     pubtime: number;
     starred: string;
+    tags: [InstapaperTag];
     time: number;
     title: string;
     type: string;
     url: string;
     words: number;
+}
+
+export type InstapaperTag = {
+    count: number;
+    hash: string;
+    id: number;
+    name: string;
+    slug: string;
+    time: number;
 }
 
 export type InstapaperHighlight = {
