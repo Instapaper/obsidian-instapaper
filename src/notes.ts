@@ -1,8 +1,9 @@
 import { TFile, Vault, moment, normalizePath } from "obsidian";
 import type InstapaperPlugin from "./main";
-import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight } from "./api";
+import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight, InstapaperTag } from "./api";
 
 const linkSymbol = '↗';
+const numericRE = /^\d+$/;
 
 export async function syncNotes(
     plugin: InstapaperPlugin,
@@ -57,8 +58,7 @@ export async function syncNotes(
                 frontmatter['url'] = article.url;
                 frontmatter['date'] = formatTimestamp(article.time);
                 frontmatter['tags'] = (article.tags.length > 0)
-                    ? article.tags.map((tag) => tag.name.replace(/\s+/, '-'))
-                    : undefined;
+                    ? article.tags.map(formatTag) : undefined;
                 if (article.pubtime) {
                     frontmatter['pubdate'] = formatTimestamp(article.pubtime);
                 }
@@ -110,6 +110,18 @@ function contentForHighlight(highlight: InstapaperHighlight): string {
     }
 
     return content;
+}
+
+function formatTag(tag: InstapaperTag): string {
+    // Obsidian tags cannot contain spaces.
+    let name = tag.name.trim().replace(/\s+/, '-');
+
+    // Obsidian tags cannot be entirely numeric.
+    if (numericRE.test(name)) {
+        name += "_";
+    }
+
+    return name;
 }
 
 function formatTimestamp(timestamp: number): string {
