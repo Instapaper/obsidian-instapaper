@@ -15,9 +15,16 @@ It integrates with your Instapaper account and allows you to:
 2. Enable the installed "Instapaper" plugin (**Settings → Community plugins → Installed plugins**).
 3. Click the "Options" icon (or go to **Settings → Instapaper**) to connect your Instapaper account, start syncing highlights, and manage other options.
 
+## Tags
+
+[Obsidian's tag format](https://help.obsidian.md/Editing+and+formatting/Tags#Tag+format) is more restrictive than Instapaper's so we apply some normalization rules:
+
+- Obsidian tags cannot contain spaces. We replace runs of one or more spaces with a hyphen (`-`).
+- Obsidian tags must contain a least one non-numeric character. We append an underscore (`_`) to any entirely numeric Instapaper tag.
+
 ## Feedback
 
-Please send general feedback to: support@help.instapaper.com
+Please send general feedback to: <support@help.instapaper.com>
 
 [Code contributions](CONTRIBUTING.md) for improvements are also welcome.
 

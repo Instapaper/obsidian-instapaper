@@ -58,7 +58,7 @@ export async function syncNotes(
                 frontmatter['url'] = article.url;
                 frontmatter['date'] = formatTimestamp(article.time);
                 frontmatter['tags'] = (article.tags.length > 0)
-                    ? article.tags.map(formatTag) : undefined;
+                    ? article.tags.map(normalizeTag) : undefined;
                 if (article.pubtime) {
                     frontmatter['pubdate'] = formatTimestamp(article.pubtime);
                 }
@@ -112,7 +112,7 @@ function contentForHighlight(highlight: InstapaperHighlight): string {
     return content;
 }
 
-function formatTag(tag: InstapaperTag): string {
+function normalizeTag(tag: InstapaperTag): string {
     // Obsidian tags cannot contain spaces.
     let name = tag.name.trim().replace(/\s+/, '-');
 
