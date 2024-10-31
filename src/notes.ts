@@ -57,7 +57,8 @@ export async function syncNotes(
                 frontmatter['url'] = article.url;
                 frontmatter['date'] = formatTimestamp(article.time);
                 frontmatter['tags'] = (article.tags.length > 0)
-                    ? article.tags.map((tag) => tag.name) : undefined;
+                    ? article.tags.map((tag) => tag.name.replace(/\s+/, '-'))
+                    : undefined;
                 if (article.pubtime) {
                     frontmatter['pubdate'] = formatTimestamp(article.pubtime);
                 }
