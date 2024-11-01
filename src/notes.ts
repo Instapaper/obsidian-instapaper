@@ -3,7 +3,6 @@ import type InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight, InstapaperTag } from "./api";
 
 const linkSymbol = '↗';
-const numericRE = /^\d+$/;
 
 export async function syncNotes(
     plugin: InstapaperPlugin,
@@ -114,10 +113,10 @@ function contentForHighlight(highlight: InstapaperHighlight): string {
 
 function normalizeTag(tag: InstapaperTag): string {
     // Obsidian tags cannot contain spaces.
-    let name = tag.name.trim().replace(/\s+/, '-');
+    let name = tag.name.trim().replace(/\s+/g, '-');
 
     // Obsidian tags cannot be entirely numeric.
-    if (numericRE.test(name)) {
+    if (/^\d+$/.test(name)) {
         name += "_";
     }
 
