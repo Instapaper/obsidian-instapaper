@@ -1,7 +1,11 @@
-import { Notice, Plugin } from 'obsidian';
+import { Notice, Plugin, TFolder } from 'obsidian';
 import { InstapaperAccount, InstapaperAPI } from './api'
 import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab } from './settings'
 import { syncNotes } from './notes';
+
+type SyncResult = {
+	notes: number
+}
 
 export default class InstapaperPlugin extends Plugin {
 	settings: InstapaperPluginSettings;
@@ -41,6 +45,29 @@ export default class InstapaperPlugin extends Plugin {
 			})
 		);
 
+		this.registerEvent(
+			this.app.workspace.on('file-menu', (menu, file) => {
+				if (file! instanceof TFolder || file.path != this.settings.notesFolder) {
+					return;
+				}
+
+				const token = this.settings.token;
+				if (!token) return;
+
+				menu.addItem((item) => {
+					item
+						.setTitle("Sync with Instapaper")
+						.setIcon("folder-sync")
+						.setSection("Instapaper")
+						.onClick(async (evt) => {
+							const resync = evt.getModifierState("Meta");
+							const result = await this.runSync('manual', resync);
+							this.reportSyncResult(result);
+						});
+				});
+			})
+		);
+
 		this.addCommand({
 			id: 'sync',
 			name: 'Sync',
@@ -52,19 +79,8 @@ export default class InstapaperPlugin extends Plugin {
 
 				if (!checking) {
 					(async () => {
-						const counts = await this.runSync('manual');
-						const total = Object.values(counts).reduce((a, b) => a + b);
-						switch (total) {
-							case 0:
-								this.notice(`No new Instapaper notes`);
-								break;
-							case 1:
-								this.notice(`Updated 1 Instapaper note`);
-								break;
-							default:
-								this.notice(`Updated ${total} Instapaper notes`);
-								break;
-						}
+						const result = await this.runSync('manual');
+						this.reportSyncResult(result);
 					})();
 				}
 
@@ -162,8 +178,9 @@ export default class InstapaperPlugin extends Plugin {
 
 	// SYNC
 
-	async runSync(reason: string): Promise<{ notes: number }> {
+	async runSync(reason: string, resync = false): Promise<SyncResult> {
 		const counts = { notes: 0 };
+		const cursor = resync ? 0 : this.settings.notesCursor;
 
 		const token = this.settings.token;
 		if (!token) return counts;
@@ -174,12 +191,12 @@ export default class InstapaperPlugin extends Plugin {
 		}
 
 		this.syncInProgress = true;
-		this.log(`synchronizing (${reason})`);
+		this.log(`synchronizing (${reason}) @ ${cursor}`);
 
 		try {
-			const { cursor, count } = await syncNotes(this, token, this.settings.notesCursor);
+			const { cursor: newCursor, count } = await syncNotes(this, token, cursor);
 			counts.notes = count;
-			await this.saveSettings({ notesCursor: cursor });
+			await this.saveSettings({ notesCursor: newCursor });
 		} catch (e) {
 			this.log('sync failure:', e);
 		} finally {
@@ -209,5 +226,20 @@ export default class InstapaperPlugin extends Plugin {
 			this.runSync('scheduled')
 		}, timeout);
 		this.registerInterval(this.syncInterval);
+	}
+
+	private reportSyncResult(result: SyncResult) {
+		const total = Object.values(result).reduce((a, b) => a + b);
+		switch (total) {
+			case 0:
+				this.notice(`No new Instapaper notes`);
+				break;
+			case 1:
+				this.notice(`Updated 1 Instapaper note`);
+				break;
+			default:
+				this.notice(`Updated ${total} Instapaper notes`);
+				break;
+		}
 	}
 }
