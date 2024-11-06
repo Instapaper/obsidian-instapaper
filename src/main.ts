@@ -47,7 +47,7 @@ export default class InstapaperPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on('file-menu', (menu, file) => {
-				if (file! instanceof TFolder || file.path != this.settings.notesFolder) {
+				if (!(file instanceof TFolder && file.path == this.settings.notesFolder)) {
 					return;
 				}
 
