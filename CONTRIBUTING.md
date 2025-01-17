@@ -20,7 +20,7 @@ If you need to manually install a copy of this plugin, copy the `main.js` and `m
 
 ## API Credentials
 
-You'll need your own pair of Instapaper API [OAuth credentials](https://www.instapaper.com/api) to use the API.
+You'll need your own pair of Instapaper API [OAuth credentials](https://www.instapaper.com/api) to use the API. Some API calls require special privileges so you'll need to request that additional access.
 
 Add them to a local `.env` file:
 
