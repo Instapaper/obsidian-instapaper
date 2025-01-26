@@ -1,6 +1,7 @@
 # Instapaper Plugin for Obsidian
 
-This is the official Instapaper plugin for [Obsidian](https://obsidian.md).
+This is the official Instapaper plugin for [Obsidian](https://obsidian.md),
+a [2024 Obsidian Gem of the Year](https://obsidian.md/blog/2024-goty-winners/).
 
 It integrates with your Instapaper account and allows you to:
 
