@@ -179,15 +179,15 @@ export default class InstapaperPlugin extends Plugin {
 	// SYNC
 
 	async runSync(reason: string, resync = false): Promise<SyncResult> {
-		const counts = { notes: 0 };
+		const result = { notes: 0 };
 		const cursor = resync ? 0 : this.settings.notesCursor;
 
 		const token = this.settings.token;
-		if (!token) return counts;
+		if (!token) return result;
 
 		if (this.syncInProgress) {
 			this.log('sync is already in progress');
-			return counts;
+			return result;
 		}
 
 		this.syncInProgress = true;
@@ -195,7 +195,7 @@ export default class InstapaperPlugin extends Plugin {
 
 		try {
 			const { cursor: newCursor, count } = await syncNotes(this, token, cursor);
-			counts.notes = count;
+			result.notes = count;
 			await this.saveSettings({ notesCursor: newCursor });
 		} catch (e) {
 			this.log('sync failure:', e);
@@ -203,7 +203,7 @@ export default class InstapaperPlugin extends Plugin {
 			this.syncInProgress = false;
 		}
 
-		return counts;
+		return result;
 	}
 
 	clearSyncInterval() {
