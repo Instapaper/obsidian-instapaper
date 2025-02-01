@@ -10,14 +10,5 @@ updates:
     schedule:
       interval: "weekly"
     ignore:
-      - dependency-name: "@typescript-eslint/*"
-        update-types: [
-          "version-update:semver-minor",
-          "version-update:semver-patch",
-        ]
       - dependency-name: "*"
         update-types: ["version-update:semver-patch"]
-    groups:
-      typescript-eslint:
-        patterns:
-          - "@typescript-eslint/*"

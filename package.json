@@ -16,15 +16,16 @@
 	"author": "Instapaper",
 	"license": "MIT",
 	"devDependencies": {
+		"@eslint/js": "^9.19.0",
 		"@types/node": "^18.19.32",
-		"@typescript-eslint/eslint-plugin": "8.0.0",
-		"@typescript-eslint/parser": "8.0.0",
 		"builtin-modules": "4.0.0",
 		"dotenv": "^16.4.1",
 		"esbuild": "0.24.0",
+		"eslint": "^9.19.0",
 		"obsidian": "1.5.7",
 		"tslib": "2.8.0",
-		"typescript": "5.7.2"
+		"typescript": "^5.7.2",
+		"typescript-eslint": "^8.22.0"
 	},
 	"dependencies": {
 		"hmacsha1": "^1.0.0",
