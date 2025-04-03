@@ -17,12 +17,13 @@ export type InstapaperAccessToken = {
 }
 
 export type InstapaperAccount = {
-    type: string;
+    type: "user";
     user_id: number;
     username: string;
 }
 
 export type InstapaperBookmark = {
+    type: "bookmark";
     author: string;
     bookmark_id: number;
     description: string;
@@ -31,11 +32,10 @@ export type InstapaperBookmark = {
     progress: number;
     progress_timestamp: number;
     pubtime: number;
-    starred: string;
-    tags: [InstapaperTag];
+    starred: "0" | "1";
+    tags: InstapaperTag[];
     time: number;
     title: string;
-    type: string;
     url: string;
     words: number;
 }
@@ -54,7 +54,7 @@ export type InstapaperHighlight = {
     article_id: string;
     time: number;
     text: string;
-    note?: string;
+    note: string | null;
 }
 
 export class InstapaperAPI {
