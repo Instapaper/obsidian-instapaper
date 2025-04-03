@@ -11,9 +11,7 @@ export interface InstapaperPluginSettings {
     notesCursor: number;
 }
 
-export const DEFAULT_SETTINGS: InstapaperPluginSettings = {
-    token: undefined,
-    account: undefined,
+export const DEFAULT_SETTINGS: Partial<InstapaperPluginSettings> = {
     syncFrequency: 0,
     syncOnStart: true,
     notesFolder: 'Instapaper Notes',

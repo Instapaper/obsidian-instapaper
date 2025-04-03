@@ -2,6 +2,7 @@ import { Notice, Plugin, TFolder } from 'obsidian';
 import { InstapaperAccount, InstapaperAPI } from './api'
 import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab } from './settings'
 import { syncNotes } from './notes';
+import mergeOptions from 'merge-options';
 
 type SyncResult = {
 	notes: number
@@ -128,7 +129,7 @@ export default class InstapaperPlugin extends Plugin {
 			needsSave = true;
 		}
 
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+		this.settings = mergeOptions(DEFAULT_SETTINGS, data);
 		if (needsSave) {
 			await this.saveSettings();
 		}
