@@ -20,21 +20,30 @@ export async function syncNotes(
         cursor = 0;
     }
 
-    let highlights: [InstapaperHighlight]
     let count = 0;
+    let errors = 0;
+    const maxErrors = 3;
 
-    do {
-        let bookmarks: Record<string, InstapaperBookmark>
+    while (true) {
+        let highlights: InstapaperHighlight[];
+        let bookmarks: Record<string, InstapaperBookmark>;
 
         try {
             ({ highlights, bookmarks } = await plugin.api.getHighlights(token, {
                 after: cursor,
                 sort: 'asc',
             }));
+            errors = 0; // Reset on success
         } catch (e) {
             plugin.log('Failed to get highlights:', e);
-            return { cursor, count };
+            if (++errors >= maxErrors) {
+                plugin.log(`Stopping sync after ${maxErrors} consecutive errors`);
+                break;
+            }
+            continue;
         }
+
+        if (highlights.length === 0) break;
 
         for (const highlight of highlights) {
             cursor = highlight.highlight_id;
@@ -75,7 +84,7 @@ export async function syncNotes(
                 count++;
             }
         }
-    } while (highlights.length > 0);
+    }
 
     return { cursor, count };
 }
