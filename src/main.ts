@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFolder } from 'obsidian';
+import { Keymap, Notice, Plugin, TFolder } from 'obsidian';
 import { InstapaperAccount, InstapaperAPI } from './api'
 import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab } from './settings'
 import { syncNotes } from './notes';
@@ -60,7 +60,7 @@ export default class InstapaperPlugin extends Plugin {
 						.setIcon("folder-sync")
 						.setSection("Instapaper")
 						.onClick(async (evt) => {
-							const resync = evt.getModifierState("Meta");
+							const resync = Keymap.isModifier(evt, "Mod");
 							const result = await this.runSync('manual', resync);
 							this.reportSyncResult(result);
 						});
