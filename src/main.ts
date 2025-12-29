@@ -59,10 +59,14 @@ export default class InstapaperPlugin extends Plugin {
 						.setTitle("Sync with Instapaper")
 						.setIcon("folder-sync")
 						.setSection("Instapaper")
-						.onClick(async (evt) => {
+						.onClick((evt) => {
 							const resync = Keymap.isModifier(evt, "Mod");
-							const result = await this.runSync('manual', resync);
-							this.reportSyncResult(result);
+							this.runSync('manual', resync)
+								.then(result => this.reportSyncResult(result))
+								.catch(e => {
+									this.log('Sync failed:', e);
+									this.notice('Failed to sync with Instapaper');
+								});
 						});
 				});
 			})
@@ -78,10 +82,12 @@ export default class InstapaperPlugin extends Plugin {
 				}
 
 				if (!checking) {
-					(async () => {
-						const result = await this.runSync('manual');
-						this.reportSyncResult(result);
-					})();
+					this.runSync('manual')
+						.then(result => this.reportSyncResult(result))
+						.catch(e => {
+							this.log('Sync command failed:', e);
+							this.notice('Failed to sync with Instapaper');
+						});
 				}
 
 				return true;
@@ -90,8 +96,10 @@ export default class InstapaperPlugin extends Plugin {
 
 		// Optionally run an immediate sync as soon as the workspace is ready.
 		if (this.settings.syncOnStart && this.settings.token) {
-			this.app.workspace.onLayoutReady(async () => {
-				await this.runSync('on start');
+			this.app.workspace.onLayoutReady(() => {
+				this.runSync('on start').catch(e => {
+					this.log('Sync on start failed:', e);
+				});
 			})
 		}
 	}
