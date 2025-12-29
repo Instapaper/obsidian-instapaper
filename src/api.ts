@@ -130,7 +130,7 @@ export class InstapaperAPI {
             token,
         )
 
-        const data = await response.json as [InstapaperAccount]
+        const data = (await response.json) as [InstapaperAccount]
         return data[0];
     }
 
