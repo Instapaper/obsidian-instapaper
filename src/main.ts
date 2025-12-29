@@ -16,9 +16,8 @@ export default class InstapaperPlugin extends Plugin {
 
 	async onload() {
 		this.api = new InstapaperAPI(
-			// @ts-expect-error
-			process.env.INSTAPAPER_CONSUMER_KEY,
-			process.env.INSTAPAPER_CONSUMER_SECRET,
+			process.env.INSTAPAPER_CONSUMER_KEY as string,
+			process.env.INSTAPAPER_CONSUMER_SECRET as string,
 		);
 
 		await this.loadSettings();
