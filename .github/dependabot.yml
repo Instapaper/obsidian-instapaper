@@ -17,3 +17,5 @@ updates:
         patterns:
           - '@eslint/*'
           - 'eslint'
+        update-types:
+          - 'version-update:semver-major'
