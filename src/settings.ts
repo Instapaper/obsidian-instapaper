@@ -173,6 +173,12 @@ export class InstapaperSettingTab extends PluginSettingTab {
             .setHeading()
             .setClass('instapaper-frontmatter-heading');
 
+        const isValidPropertyName = (name: string): boolean => {
+            // Must be a valid YAML key: start with letter or underscore,
+            // followed by letters, numbers, underscores, or hyphens
+            return /^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(name);
+        };
+
         const addField = (
             name: string,
             description: string,
@@ -200,7 +206,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                         return;
                     }
 
-                    if (this.isValidPropertyName(trimmed)) {
+                    if (isValidPropertyName(trimmed)) {
                         config.propertyName = trimmed;
                         await this.plugin.saveSettings({
                             frontmatter: this.plugin.settings.frontmatter
@@ -251,12 +257,6 @@ export class InstapaperSettingTab extends PluginSettingTab {
         addField("Saved date", "When you saved the article to Instapaper", "date");
         addField("Tags", "Tags from Instapaper", "tags");
         addField("Source", 'A static value (e.g., "instapaper")', "source", true);
-    }
-
-    private isValidPropertyName(name: string): boolean {
-        // Must be a valid YAML key: start with letter or underscore,
-        // followed by letters, numbers, underscores, or hyphens
-        return /^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(name);
     }
 }
 

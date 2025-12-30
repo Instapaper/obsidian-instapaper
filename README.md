@@ -50,7 +50,6 @@ Available properties include:
 - **Source**: A static value (e.g., "instapaper")
 
 Properties are only added to notes when they have values available from Instapaper.
->>>>>>> 79cae39 (Customizable article properties)
 
 ## Feedback
 
