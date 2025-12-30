@@ -65,6 +65,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
         if (this.plugin.settings.account) {
             this.addSyncSettings(containerEl);
             this.addNotesSettings(containerEl);
+            this.addFrontmatterSettings(containerEl);
         }
     }
 
@@ -163,8 +164,6 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     })
                 });
         });
-
-        this.addFrontmatterSettings(containerEl);
     }
 
     private addFrontmatterSettings(containerEl: HTMLElement) {
