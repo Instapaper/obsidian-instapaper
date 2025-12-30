@@ -247,9 +247,9 @@ export class InstapaperSettingTab extends PluginSettingTab {
 
         addField("Title", "The article's title", "title");
         addField("Author", "The article's author", "author");
-        addField("Publish date", "When the article was published", "pubdate");
         addField("URL", "The article's URL", "url");
-        addField("Date saved", "When you saved the article to Instapaper", "date");
+        addField("Publish date", "When the article was published", "pubdate");
+        addField("Saved date", "When you saved the article to Instapaper", "date");
         addField("Tags", "Tags from Instapaper", "tags");
         addField("Source", 'A static value (e.g., "instapaper")', "source", true);
     }

@@ -73,11 +73,11 @@ export async function syncNotes(
                 if (fm.author.enabled && fm.author.propertyName && article.author) {
                     frontmatter[fm.author.propertyName] = article.author;
                 }
-                if (fm.pubdate.enabled && fm.pubdate.propertyName && article.pubtime) {
-                    frontmatter[fm.pubdate.propertyName] = formatTimestamp(article.pubtime);
-                }
                 if (fm.url.enabled && fm.url.propertyName) {
                     frontmatter[fm.url.propertyName] = article.url;
+                }
+                if (fm.pubdate.enabled && fm.pubdate.propertyName && article.pubtime) {
+                    frontmatter[fm.pubdate.propertyName] = formatTimestamp(article.pubtime);
                 }
                 if (fm.date.enabled && fm.date.propertyName) {
                     frontmatter[fm.date.propertyName] = formatTimestamp(article.time);
