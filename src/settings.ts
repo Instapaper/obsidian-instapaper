@@ -2,6 +2,25 @@ import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, T
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount } from "./api";
 
+interface FrontmatterField {
+    enabled: boolean;
+    propertyName: string;
+}
+
+interface FrontmatterValueField extends FrontmatterField {
+    value: string;
+}
+
+interface ArticleFrontmatterSettings {
+    url: FrontmatterField;
+    title: FrontmatterField;
+    date: FrontmatterField;
+    pubdate: FrontmatterField;
+    author: FrontmatterField;
+    tags: FrontmatterField;
+    source: FrontmatterValueField;
+}
+
 export interface InstapaperPluginSettings {
     token?: InstapaperAccessToken;
     account?: InstapaperAccount;
@@ -9,6 +28,7 @@ export interface InstapaperPluginSettings {
     syncOnStart: boolean;
     notesFolder: string;
     notesCursor: number;
+    frontmatter: ArticleFrontmatterSettings;
 }
 
 export const DEFAULT_SETTINGS: Partial<InstapaperPluginSettings> = {
@@ -16,6 +36,15 @@ export const DEFAULT_SETTINGS: Partial<InstapaperPluginSettings> = {
     syncOnStart: true,
     notesFolder: 'Instapaper Notes',
     notesCursor: 0,
+    frontmatter: {
+        url: { enabled: true, propertyName: 'url' },
+        title: { enabled: false, propertyName: 'title' },
+        date: { enabled: true, propertyName: 'date' },
+        pubdate: { enabled: true, propertyName: 'pubdate' },
+        author: { enabled: true, propertyName: 'author' },
+        tags: { enabled: true, propertyName: 'tags' },
+        source: { enabled: false, propertyName: 'source', value: 'instapaper' },
+    },
 }
 
 export class InstapaperSettingTab extends PluginSettingTab {
@@ -134,6 +163,101 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     })
                 });
         });
+
+        this.addFrontmatterSettings(containerEl);
+    }
+
+    private addFrontmatterSettings(containerEl: HTMLElement) {
+        new Setting(containerEl)
+            .setName('Article properties')
+            .setDesc('Configure which article properties to include and what to name them. Properties are only added when available.')
+            .setHeading()
+            .setClass('instapaper-frontmatter-heading');
+
+        const addField = (
+            name: string,
+            description: string,
+            fieldKey: keyof ArticleFrontmatterSettings,
+            showValue?: boolean
+        ) => {
+            const setting = new Setting(containerEl)
+                .setName(name)
+                .setDesc(description)
+                .setClass('instapaper-frontmatter-field');
+
+            const config = this.plugin.settings.frontmatter[fieldKey];
+
+            let propertyNameText: TextComponent;
+            setting.addText((text) => {
+                propertyNameText = text;
+                text.setPlaceholder('Property name');
+                text.setValue(config.propertyName);
+                text.setDisabled(!config.enabled);
+                text.onChange(async (value) => {
+                    const trimmed = value.trim();
+                    if (trimmed === '' && config.enabled) {
+                        text.inputEl.addClass('instapaper-invalid-input');
+                        text.inputEl.title = 'Property name cannot be empty. Use the toggle to disable this property.';
+                        return;
+                    }
+
+                    if (this.isValidPropertyName(trimmed)) {
+                        config.propertyName = trimmed;
+                        await this.plugin.saveSettings({
+                            frontmatter: this.plugin.settings.frontmatter
+                        });
+                        text.inputEl.removeClass('instapaper-invalid-input');
+                        text.inputEl.title = '';
+                    } else {
+                        text.inputEl.addClass('instapaper-invalid-input');
+                        text.inputEl.title = 'Property name must start with a letter or underscore, followed by letters, numbers, underscores, or hyphens.';
+                    }
+                });
+            });
+
+            let valueText: TextComponent | undefined;
+            if (showValue && 'value' in this.plugin.settings.frontmatter[fieldKey]) {
+                setting.addText((text) => {
+                    valueText = text;
+                    const valueConfig = this.plugin.settings.frontmatter[fieldKey] as FrontmatterValueField;
+                    text.setPlaceholder('Value');
+                    text.setValue(valueConfig.value);
+                    text.setDisabled(!config.enabled);
+                    text.onChange(async (value) => {
+                        valueConfig.value = value;
+                        await this.plugin.saveSettings({
+                            frontmatter: this.plugin.settings.frontmatter
+                        });
+                    });
+                });
+            }
+
+            setting.addToggle((toggle) => {
+                toggle.setValue(config.enabled);
+                toggle.onChange(async (value) => {
+                    config.enabled = value;
+                    propertyNameText.setDisabled(!value);
+                    valueText?.setDisabled(!value);
+                    await this.plugin.saveSettings({
+                        frontmatter: this.plugin.settings.frontmatter
+                    });
+                });
+            });
+        };
+
+        addField("Title", "The article's title", "title");
+        addField("Author", "The article's author", "author");
+        addField("Publish date", "When the article was published", "pubdate");
+        addField("URL", "The article's URL", "url");
+        addField("Date saved", "When you saved the article to Instapaper", "date");
+        addField("Tags", "Tags from Instapaper", "tags");
+        addField("Source", 'A static value (e.g., "instapaper")', "source", true);
+    }
+
+    private isValidPropertyName(name: string): boolean {
+        // Must be a valid YAML key: start with letter or underscore,
+        // followed by letters, numbers, underscores, or hyphens
+        return /^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(name);
     }
 }
 
