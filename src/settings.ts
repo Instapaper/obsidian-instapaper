@@ -183,7 +183,6 @@ export class InstapaperSettingTab extends PluginSettingTab {
             name: string,
             description: string,
             fieldKey: keyof ArticleFrontmatterSettings,
-            showValue?: boolean
         ) => {
             const setting = new Setting(containerEl)
                 .setName(name)
@@ -221,7 +220,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
             });
 
             let valueText: TextComponent | undefined;
-            if (showValue && 'value' in this.plugin.settings.frontmatter[fieldKey]) {
+            if ('value' in this.plugin.settings.frontmatter[fieldKey]) {
                 setting.addText((text) => {
                     valueText = text;
                     const valueConfig = this.plugin.settings.frontmatter[fieldKey] as FrontmatterValueField;
@@ -256,7 +255,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
         addField("Publish date", "When the article was published", "pubdate");
         addField("Saved date", "When you saved the article to Instapaper", "date");
         addField("Tags", "Tags from Instapaper", "tags");
-        addField("Source", 'A static value (e.g., "instapaper")', "source", true);
+        addField("Source", 'A static value (e.g., "instapaper")', "source");
     }
 }
 
