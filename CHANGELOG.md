@@ -10,3 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Block identifiers for highlights using Obsidian's block reference syntax (`^h{highlight_id}`). This enables linking to specific highlights and provides more robust duplicate detection.
+
+### Changed
+
+- Minimum Obsidian version requirement updated to 1.10.0 for access to new API features.
