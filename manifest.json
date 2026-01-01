@@ -2,7 +2,7 @@
 	"id": "instapaper",
 	"name": "Instapaper",
 	"version": "1.1.4",
-	"minAppVersion": "1.10.0",
+	"minAppVersion": "1.11.0",
 	"description": "Connect Obsidian to your Instapaper account.",
 	"author": "Instapaper",
 	"authorUrl": "https://www.instapaper.com",

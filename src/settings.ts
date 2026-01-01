@@ -1,4 +1,4 @@
-import { App, ButtonComponent, Modal, PluginSettingTab, Setting, TFolder, TextComponent, normalizePath } from "obsidian";
+import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, TFolder, TextComponent, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount } from "./api";
 
@@ -39,12 +39,12 @@ export class InstapaperSettingTab extends PluginSettingTab {
         }
     }
 
-    private addAccountSettings(containerEl: HTMLElement): Setting {
+    private addAccountSettings(containerEl: HTMLElement) {
         const setting = new Setting(containerEl)
             .setName('Instapaper account');
 
         if (this.plugin.settings.account) {
-            return setting
+            setting
                 .setDesc(`Connected as: ${this.plugin.settings.account.username}`)
                 .addButton((button) => {
                     button.setButtonText('Disconnect');
@@ -55,79 +55,85 @@ export class InstapaperSettingTab extends PluginSettingTab {
                         this.display();
                     })
                 });
+        } else {
+            setting
+                .setDesc('Connect your Instapaper account')
+                .addButton((button) => {
+                    button.setButtonText('Connect');
+                    button.setTooltip('Connect your Instapaper account')
+                    button.setCta();
+                    button.onClick(async () => {
+                        new ConnectAccountModal(this.app, async (username: string, password: string) => {
+                            try {
+                                const account = await this.plugin.connectAccount(username, password);
+                                this.plugin.notice(`Connected Instapaper account: ${account.username}`);
+                            } catch (e) {
+                                console.log('Failed to connect account:', e);
+                                await this.plugin.disconnectAccount();
+                                this.plugin.notice('Failed to connect Instapaper account');
+                            }
+                            this.display();
+                        }).open();
+                    })
+                });
         }
-
-        return setting
-            .setDesc('Connect your Instapaper account')
-            .addButton((button) => {
-                button.setButtonText('Connect');
-                button.setTooltip('Connect your Instapaper account')
-                button.setCta();
-                button.onClick(async () => {
-                    new ConnectAccountModal(this.app, async (username: string, password: string) => {
-                        try {
-                            const account = await this.plugin.connectAccount(username, password);
-                            this.plugin.notice(`Connected Instapaper account: ${account.username}`);
-                        } catch (e) {
-                            console.log('Failed to connect account:', e);
-                            await this.plugin.disconnectAccount();
-                            this.plugin.notice('Failed to connect Instapaper account');
-                        }
-                        this.display();
-                    }).open();
-                })
-            });
     }
 
     private addSyncSettings(containerEl: HTMLElement) {
-        new Setting(containerEl).setName('Sync').setHeading();
+        const group = new SettingGroup(containerEl).setHeading('Sync');
 
-        new Setting(containerEl)
-            .setName('Sync frequency')
-            .setDesc('The frequency at which Obsidian (when running) will automatically sync your data.')
-            .addDropdown((dropdown) => {
-                dropdown.addOption("0", "Manual");
-                dropdown.addOption("60", "Hourly");
-                dropdown.addOption("720", "Every 12 hours")
-                dropdown.addOption("1440", "Every 24 hours")
+        group.addSetting((setting) => {
+            setting
+                .setName('Sync frequency')
+                .setDesc('The frequency at which Obsidian (when running) will automatically sync your data.')
+                .addDropdown((dropdown) => {
+                    dropdown.addOption("0", "Manual");
+                    dropdown.addOption("60", "Hourly");
+                    dropdown.addOption("720", "Every 12 hours")
+                    dropdown.addOption("1440", "Every 24 hours")
 
-                dropdown.setValue(Number(this.plugin.settings.syncFrequency).toString());
-                dropdown.onChange(async (value) => {
-                    await this.plugin.saveSettings({ syncFrequency: parseInt(value) });
-                    await this.plugin.updateSyncInterval();
+                    dropdown.setValue(Number(this.plugin.settings.syncFrequency).toString());
+                    dropdown.onChange(async (value) => {
+                        await this.plugin.saveSettings({ syncFrequency: parseInt(value) });
+                        await this.plugin.updateSyncInterval();
+                    });
                 });
-            });
+        });
 
-        new Setting(containerEl)
-            .setName('Sync on start')
-            .setDesc('Automatically sync when Obsidian starts or an account is connected.')
-            .addToggle((toggle) => {
-                toggle.setValue(this.plugin.settings.syncOnStart);
-                toggle.onChange(async (value) => {
-                    await this.plugin.saveSettings({ syncOnStart: value });
+        group.addSetting((setting) => {
+            setting
+                .setName('Sync on start')
+                .setDesc('Automatically sync when Obsidian starts or an account is connected.')
+                .addToggle((toggle) => {
+                    toggle.setValue(this.plugin.settings.syncOnStart);
+                    toggle.onChange(async (value) => {
+                        await this.plugin.saveSettings({ syncOnStart: value });
+                    });
                 });
-            });
+        });
     }
 
     private addNotesSettings(containerEl: HTMLElement) {
-        new Setting(containerEl).setName('Notes').setHeading();
+        const group = new SettingGroup(containerEl).setHeading('Notes');
 
-        new Setting(containerEl)
-            .setName('Notes folder')
-            .setDesc('The folder in which your notes and highlights will be synced.')
-            .addText((text) => {
-                text.setValue(this.plugin.settings.notesFolder)
-                text.onChange(async (value) => {
-                    const previousPath = this.plugin.settings.notesFolder;
-                    const newPath = normalizePath(value);
-                    await this.plugin.saveSettings({ notesFolder: newPath });
+        group.addSetting((setting) => {
+            setting
+                .setName('Notes folder')
+                .setDesc('The folder in which your notes and highlights will be synced.')
+                .addText((text) => {
+                    text.setValue(this.plugin.settings.notesFolder)
+                    text.onChange(async (value) => {
+                        const previousPath = this.plugin.settings.notesFolder;
+                        const newPath = normalizePath(value);
+                        await this.plugin.saveSettings({ notesFolder: newPath });
 
-                    const previousFile = this.app.vault.getAbstractFileByPath(previousPath);
-                    if (previousFile instanceof TFolder) {
-                        await previousFile.vault.rename(previousFile, newPath);
-                    }
-                })
-            });
+                        const previousFile = this.app.vault.getAbstractFileByPath(previousPath);
+                        if (previousFile instanceof TFolder) {
+                            await previousFile.vault.rename(previousFile, newPath);
+                        }
+                    })
+                });
+        });
     }
 }
 
