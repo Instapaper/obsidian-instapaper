@@ -13,4 +13,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Minimum Obsidian version requirement updated to 1.10.0 for access to new API features.
+- Minimum Obsidian version requirement updated to 1.11.0 for access to new API features.

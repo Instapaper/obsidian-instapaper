@@ -12,7 +12,7 @@ It integrates with your Instapaper account and allows you to:
 
 ## Setup
 
-This plugin requires Obsidian v1.10.0 or higher.
+This plugin requires Obsidian v1.11.0 or higher.
 
 1. Install the [Instapaper](https://obsidian.md/plugins?id=instapaper) plugin within Obsidian (**Settings → Community plugins**).
 2. Enable the installed "Instapaper" plugin (**Settings → Community plugins → Installed plugins**).
