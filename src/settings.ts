@@ -1,4 +1,4 @@
-import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, TFolder, normalizePath } from "obsidian";
+import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, TextComponent, TFolder, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount } from "./api";
 
@@ -167,11 +167,13 @@ export class InstapaperSettingTab extends PluginSettingTab {
     }
 
     private addFrontmatterSettings(containerEl: HTMLElement) {
-        new Setting(containerEl)
-            .setName('Article properties')
-            .setDesc('Configure which article properties to include and what to name them. Properties are only added when available.')
-            .setHeading()
-            .setClass('instapaper-frontmatter-heading');
+        const group = new SettingGroup(containerEl)
+            .setHeading('Article properties')
+            .addClass('instapaper-article-properties');
+
+        group.addSetting((setting) => {
+            setting.setDesc('Configure which article properties to include and what to name them. Properties are only added when available.');
+        });
 
         const isValidPropertyName = (name: string): boolean => {
             // Must be a valid YAML key: start with letter or underscore,
@@ -184,66 +186,67 @@ export class InstapaperSettingTab extends PluginSettingTab {
             description: string,
             fieldKey: keyof ArticleFrontmatterSettings,
         ) => {
-            const setting = new Setting(containerEl)
-                .setName(name)
-                .setDesc(description)
-                .setClass('instapaper-frontmatter-field');
+            group.addSetting((setting) => {
+                setting
+                    .setName(name)
+                    .setDesc(description);
 
-            const config = this.plugin.settings.frontmatter[fieldKey];
+                const config = this.plugin.settings.frontmatter[fieldKey];
 
-            let propertyNameText: TextComponent;
-            setting.addText((text) => {
-                propertyNameText = text;
-                text.setPlaceholder('Property name');
-                text.setValue(config.propertyName);
-                text.setDisabled(!config.enabled);
-                text.onChange(async (value) => {
-                    const trimmed = value.trim();
-                    if (trimmed === '' && config.enabled) {
-                        text.inputEl.addClass('instapaper-invalid-input');
-                        text.inputEl.title = 'Property name cannot be empty. Use the toggle to disable this property.';
-                        return;
-                    }
-
-                    if (isValidPropertyName(trimmed)) {
-                        config.propertyName = trimmed;
-                        await this.plugin.saveSettings({
-                            frontmatter: this.plugin.settings.frontmatter
-                        });
-                        text.inputEl.removeClass('instapaper-invalid-input');
-                        text.inputEl.title = '';
-                    } else {
-                        text.inputEl.addClass('instapaper-invalid-input');
-                        text.inputEl.title = 'Property name must start with a letter or underscore, followed by letters, numbers, underscores, or hyphens.';
-                    }
-                });
-            });
-
-            let valueText: TextComponent | undefined;
-            if ('value' in this.plugin.settings.frontmatter[fieldKey]) {
+                let propertyNameText: TextComponent;
                 setting.addText((text) => {
-                    valueText = text;
-                    const valueConfig = this.plugin.settings.frontmatter[fieldKey] as FrontmatterValueField;
-                    text.setPlaceholder('Value');
-                    text.setValue(valueConfig.value);
+                    propertyNameText = text;
+                    text.setPlaceholder('Property name');
+                    text.setValue(config.propertyName);
                     text.setDisabled(!config.enabled);
                     text.onChange(async (value) => {
-                        valueConfig.value = value;
+                        const trimmed = value.trim();
+                        if (trimmed === '' && config.enabled) {
+                            text.inputEl.addClass('instapaper-invalid-input');
+                            text.inputEl.title = 'Property name cannot be empty. Use the toggle to disable this property.';
+                            return;
+                        }
+
+                        if (isValidPropertyName(trimmed)) {
+                            config.propertyName = trimmed;
+                            await this.plugin.saveSettings({
+                                frontmatter: this.plugin.settings.frontmatter
+                            });
+                            text.inputEl.removeClass('instapaper-invalid-input');
+                            text.inputEl.title = '';
+                        } else {
+                            text.inputEl.addClass('instapaper-invalid-input');
+                            text.inputEl.title = 'Property name must start with a letter or underscore, followed by letters, numbers, underscores, or hyphens.';
+                        }
+                    });
+                });
+
+                let valueText: TextComponent | undefined;
+                if ('value' in this.plugin.settings.frontmatter[fieldKey]) {
+                    setting.addText((text) => {
+                        valueText = text;
+                        const valueConfig = this.plugin.settings.frontmatter[fieldKey] as FrontmatterValueField;
+                        text.setPlaceholder('Value');
+                        text.setValue(valueConfig.value);
+                        text.setDisabled(!config.enabled);
+                        text.onChange(async (value) => {
+                            valueConfig.value = value;
+                            await this.plugin.saveSettings({
+                                frontmatter: this.plugin.settings.frontmatter
+                            });
+                        });
+                    });
+                }
+
+                setting.addToggle((toggle) => {
+                    toggle.setValue(config.enabled);
+                    toggle.onChange(async (value) => {
+                        config.enabled = value;
+                        propertyNameText.setDisabled(!value);
+                        valueText?.setDisabled(!value);
                         await this.plugin.saveSettings({
                             frontmatter: this.plugin.settings.frontmatter
                         });
-                    });
-                });
-            }
-
-            setting.addToggle((toggle) => {
-                toggle.setValue(config.enabled);
-                toggle.onChange(async (value) => {
-                    config.enabled = value;
-                    propertyNameText.setDisabled(!value);
-                    valueText?.setDisabled(!value);
-                    await this.plugin.saveSettings({
-                        frontmatter: this.plugin.settings.frontmatter
                     });
                 });
             });

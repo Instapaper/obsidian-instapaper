@@ -4,30 +4,7 @@
     opacity: 0.8;
 }
 
-.instapaper-frontmatter-heading {
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.instapaper-frontmatter-field {
-    padding: 0.4em 0 !important;
-    border-top: none !important;
-}
-
-.instapaper-frontmatter-field .setting-item-info {
-    padding: 0 !important;
-}
-
-.instapaper-frontmatter-field .setting-item-control {
-    display: flex;
-    gap: var(--size-4-2);
-    align-items: center;
-}
-
-.instapaper-frontmatter-field .setting-item-control input[type="text"] {
-    max-width: 150px;
-}
-
-.instapaper-frontmatter-field .setting-item-control input[type="text"]:disabled {
+.instapaper-article-properties input[type="text"]:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
