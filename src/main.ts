@@ -136,7 +136,7 @@ export default class InstapaperPlugin extends Plugin {
 			needsSave = true;
 		}
 
-		this.settings = mergeOptions(DEFAULT_SETTINGS, data);
+		this.settings = mergeOptions(DEFAULT_SETTINGS, data ?? {});
 		if (needsSave) {
 			await this.saveSettings();
 		}
