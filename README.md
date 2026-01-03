@@ -12,15 +12,9 @@ It integrates with your Instapaper account and allows you to:
 
 ## Setup
 
-This plugin requires Obsidian v1.11.0 or higher.
-
 1. Install the [Instapaper](https://obsidian.md/plugins?id=instapaper) plugin within Obsidian (**Settings → Community plugins**).
 2. Enable the installed "Instapaper" plugin (**Settings → Community plugins → Installed plugins**).
 3. Click the "Options" icon (or go to **Settings → Instapaper**) to connect your Instapaper account, start syncing highlights, and manage other options.
-
-## Block Identifiers
-
-Each synced highlight includes a [block identifier](https://help.obsidian.md/Linking+notes+and+files/Internal+links#Link+to+a+block+in+a+note) using the format `^h{highlight_id}`. This allows you to link to specific highlights from other notes using `[[Article Name#^h123456]]` and reference highlights in queries and searches.
 
 ## Tags
 
