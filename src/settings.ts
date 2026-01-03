@@ -1,4 +1,4 @@
-import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, TFolder, TextComponent, normalizePath } from "obsidian";
+import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, TFolder, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount } from "./api";
 
@@ -148,36 +148,46 @@ class ConnectAccountModal extends Modal {
     }
 
     onOpen() {
-        const { contentEl } = this;
+        const group = new SettingGroup(this.contentEl).setHeading('Instapaper account');
 
-        new Setting(contentEl).setName('Instapaper account').setHeading();
+        let usernameEl: HTMLInputElement;
+        let passwordEl: HTMLInputElement;
+        let connectButton: ButtonComponent;
 
-        function updateConnectButton() {
+        const updateConnectButton = () => {
             const valid = usernameEl.checkValidity() && passwordEl.checkValidity();
             connectButton.setDisabled(!valid);
-        }
+        };
 
-        const usernameEl = (new Setting(contentEl)
-            .setName("Email")
-            .addText((text) => {
-                text.inputEl.required = true;
-                text.onChange((value) => {
-                    this.username = value;
-                    updateConnectButton();
-                })
-            }).components[0] as TextComponent).inputEl;
+        group.addSetting((setting) => {
+            setting
+                .setName("Email")
+                .addText((text) => {
+                    text.inputEl.required = true;
+                    text.onChange((value) => {
+                        this.username = value;
+                        updateConnectButton();
+                    });
+                    usernameEl = text.inputEl;
+                });
+        });
 
-        const passwordEl = (new Setting(contentEl)
-            .setName("Password")
-            .addText((text) => {
-                text.inputEl.type = "password"
-                text.onChange((value) => {
-                    this.password = value;
-                    updateConnectButton();
-                })
-            }).components[0] as TextComponent).inputEl;
+        group.addSetting((setting) => {
+            setting
+                .setName("Password")
+                .addText((text) => {
+                    text.inputEl.type = "password";
+                    text.onChange((value) => {
+                        this.password = value;
+                        updateConnectButton();
+                    });
+                    passwordEl = text.inputEl;
+                });
+        });
 
-        const connectButton = new Setting(contentEl)
+        const footer = this.modalEl.createDiv({ cls: 'modal-button-container' });
+
+        new Setting(footer)
             .addButton((button) => {
                 button.setCta();
                 button.setButtonText("Connect");
@@ -187,8 +197,9 @@ class ConnectAccountModal extends Modal {
                     button.setDisabled(true);
                     await this.onConnect(this.username, this.password);
                     this.close();
-                })
-            }).components[0] as ButtonComponent;
+                });
+                connectButton = button;
+            });
     }
 
     onClose() {
