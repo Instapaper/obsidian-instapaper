@@ -1,0 +1,10 @@
+.instapaper-invalid-input {
+    border-color: var(--background-modifier-error) !important;
+    background-color: var(--background-modifier-error) !important;
+    opacity: 0.8;
+}
+
+.instapaper-article-properties input[type="text"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
