@@ -110,13 +110,20 @@ function linkForHighlight(highlight: InstapaperHighlight): string {
     return `https://www.instapaper.com/read/${highlight.article_id}/${highlight.highlight_id}`
 }
 
+// https://help.obsidian.md/links#Link+to+a+block+in+a+note
+function blockIdentifierForHighlight(highlight: InstapaperHighlight): string {
+    return `^h${highlight.highlight_id}`;
+}
+
 function hasHighlight(content: string, highlight: InstapaperHighlight): boolean {
-    return content.contains(linkForHighlight(highlight));
+    return content.contains(blockIdentifierForHighlight(highlight))
+        || content.contains(linkForHighlight(highlight));
 }
 
 function contentForHighlight(highlight: InstapaperHighlight): string {
     let content = highlight.text.replace(/^/gm, '> ');
     content += ` [${linkSymbol}](${linkForHighlight(highlight)})`;
+    content += ` ${blockIdentifierForHighlight(highlight)}`;
     content += "\n\n"
     if (highlight.note) {
         content += highlight.note + "\n\n";
