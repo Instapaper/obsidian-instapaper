@@ -19,4 +19,4 @@ updates:
           - 'eslint'
           - 'typescript-eslint'
         update-types:
-          - 'version-update:semver-major'
+          - 'major'
