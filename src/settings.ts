@@ -260,7 +260,9 @@ class ConnectAccountModal extends Modal {
     }
 
     onOpen() {
-        const group = new SettingGroup(this.contentEl).setHeading('Instapaper account');
+        const group = new SettingGroup(this.contentEl)
+            .setHeading('Instapaper account')
+            .addClass('instapaper-connect-account');
 
         let usernameEl: HTMLInputElement;
         let passwordEl: HTMLInputElement;
@@ -275,7 +277,10 @@ class ConnectAccountModal extends Modal {
             setting
                 .setName("Email")
                 .addText((text) => {
-                    text.inputEl.required = true;
+                    text.inputEl.title = 'Email address or username';
+                    text.inputEl.addEventListener('blur', () => {
+                        text.inputEl.required = true;
+                    });
                     text.onChange((value) => {
                         this.username = value;
                         updateConnectButton();
