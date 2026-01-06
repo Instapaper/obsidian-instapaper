@@ -277,8 +277,10 @@ class ConnectAccountModal extends Modal {
             setting
                 .setName("Email")
                 .addText((text) => {
-                    text.inputEl.required = true;
                     text.inputEl.title = 'Email address or username';
+                    text.inputEl.addEventListener('blur', () => {
+                        text.inputEl.required = true;
+                    });
                     text.onChange((value) => {
                         this.username = value;
                         updateConnectButton();
