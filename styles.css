@@ -5,5 +5,5 @@
 
 .instapaper-article-properties input[type="text"]:invalid {
     border-color: var(--background-modifier-error) !important;
-    background-color: color-mix(in srgb, var(--background-modifier-error) 20%, transparent) !important;
+    background-color: rgba(var(--background-modifier-error-rgb), 0.2) !important;
 }
