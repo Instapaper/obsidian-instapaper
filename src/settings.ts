@@ -89,6 +89,13 @@ export class InstapaperSettingTab extends PluginSettingTab {
             setting
                 .setDesc('Connect your Instapaper account')
                 .addButton((button) => {
+                    button.setButtonText('Create Account');
+                    button.setTooltip('Create a new Instapaper account')
+                    button.onClick(() => {
+                        window.open('https://www.instapaper.com/user/register', '_blank');
+                    });
+                })
+                .addButton((button) => {
                     button.setButtonText('Connect');
                     button.setTooltip('Connect your Instapaper account')
                     button.setCta();
