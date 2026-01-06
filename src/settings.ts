@@ -175,12 +175,6 @@ export class InstapaperSettingTab extends PluginSettingTab {
             setting.setDesc('Configure which article properties to add. Properties are only added when available.');
         });
 
-        const isValidPropertyName = (name: string): boolean => {
-            // Must be a valid YAML key: start with letter or underscore,
-            // followed by letters, numbers, underscores, or hyphens
-            return /^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(name);
-        };
-
         const addField = (
             name: string,
             description: string,
@@ -192,32 +186,24 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     .setDesc(description);
 
                 const config = this.plugin.settings.frontmatter[fieldKey];
+                const placeholder = DEFAULT_SETTINGS.frontmatter?.[fieldKey]?.propertyName ?? '';
 
                 let propertyNameText: TextComponent;
                 setting.addText((text) => {
                     propertyNameText = text;
-                    text.setPlaceholder('Property name');
+                    text.setPlaceholder(placeholder);
                     text.setValue(config.propertyName);
                     text.setDisabled(!config.enabled);
-                    text.onChange(async (value) => {
-                        const trimmed = value.trim();
-                        if (trimmed === '' && config.enabled) {
-                            text.inputEl.addClass('instapaper-invalid-input');
-                            text.inputEl.title = 'Property name cannot be empty. Use the toggle to disable this property.';
-                            return;
-                        }
+                    text.inputEl.required = config.enabled;
+                    text.inputEl.minLength = 1;
+                    text.inputEl.pattern = '^[a-zA-Z_][a-zA-Z0-9_\\-]*$';
+                    text.inputEl.title = 'Property name must start with a letter or underscore, followed by letters, numbers, underscores, or hyphens';
 
-                        if (isValidPropertyName(trimmed)) {
-                            config.propertyName = trimmed;
-                            await this.plugin.saveSettings({
-                                frontmatter: this.plugin.settings.frontmatter
-                            });
-                            text.inputEl.removeClass('instapaper-invalid-input');
-                            text.inputEl.title = '';
-                        } else {
-                            text.inputEl.addClass('instapaper-invalid-input');
-                            text.inputEl.title = 'Property name must start with a letter or underscore, followed by letters, numbers, underscores, or hyphens.';
-                        }
+                    text.onChange(async (value) => {
+                        config.propertyName = value.trim();
+                        await this.plugin.saveSettings({
+                            frontmatter: this.plugin.settings.frontmatter
+                        });
                     });
                 });
 
@@ -243,6 +229,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     toggle.onChange(async (value) => {
                         config.enabled = value;
                         propertyNameText.setDisabled(!value);
+                        propertyNameText.inputEl.required = value;
                         valueText?.setDisabled(!value);
                         await this.plugin.saveSettings({
                             frontmatter: this.plugin.settings.frontmatter
