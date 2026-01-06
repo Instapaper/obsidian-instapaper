@@ -172,7 +172,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
             .addClass('instapaper-article-properties');
 
         group.addSetting((setting) => {
-            setting.setDesc('Configure which article properties to include and what to name them. Properties are only added when available.');
+            setting.setDesc('Configure which article properties to add. Properties are only added when available.');
         });
 
         const isValidPropertyName = (name: string): boolean => {
