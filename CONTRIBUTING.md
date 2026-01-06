@@ -14,6 +14,8 @@ Contributions are welcome! This guide attempts to answer common question about h
 
 You might also want to install the [Hot-Reload](https://github.com/pjeby/hot-reload) plugin to automatically reload the code during development.
 
+You can also use the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat) to install and test development versions directly from this GitHub repository without cloning and compiling locally.
+
 ### Manual Installation
 
 If you need to manually install a copy of this plugin, copy the `main.js` and `manifest.json` files to your vault (e.g. `<Vault>/.obsidian/plugins/obsidian-instapaper/`).
