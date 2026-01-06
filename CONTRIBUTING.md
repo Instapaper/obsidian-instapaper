@@ -18,7 +18,7 @@ You can also use the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat)
 
 ### Manual Installation
 
-If you need to manually install a copy of this plugin, copy the `main.js` and `manifest.json` files to your vault (e.g. `<Vault>/.obsidian/plugins/obsidian-instapaper/`).
+If you need to manually install a copy of this plugin, copy the `main.js`, `manifest.json`, and `styles.css` files to your vault (e.g. `<Vault>/.obsidian/plugins/obsidian-instapaper/`).
 
 ## API Credentials
 
@@ -43,7 +43,7 @@ npm run lint
 
 1. Run `npm version patch`, `npm version minor` or `npm version major` to automatically `package.json`, `manifest.json`, and `versions.json`.
 2. Create a new GitHub release using the new version as the "Tag version" (exactly, without a `v` prefix).
-3. Upload the files `manifest.json` and `main.js` as binary attachments. Note: The `manifest.json` file must be in two places: the root path of the repository and also in the release.
+3. Upload the files `manifest.json`, `main.js`, and `styles.css` as binary attachments. Note: The `manifest.json` file must be in two places: the root path of the repository and also in the release.
 4. Publish the release.
 
 Also make sure that `minAppVersion` in `manifest.json` always reflects the minimum required Obsidian version expected by the plugin code.
