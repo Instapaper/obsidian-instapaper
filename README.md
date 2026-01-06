@@ -33,21 +33,15 @@ Each synced highlight includes a [block identifier](https://help.obsidian.md/Lin
 
 ### Article Properties
 
-You can customize which article properties are included in your synced notes and what to name them. In the plugin settings under **Article properties**, you can:
+You can customize which article properties are included in your synced notes. In the plugin settings under **Article properties**, you can set and rename any of these properties:
 
-- **Enable or disable** each property using the toggle
-- **Rename properties** to match your preferred naming scheme
-- **Set custom values** for static properties like "source"
-
-Available properties include:
-
-- **Title**: The article's title
-- **Author**: The article's author
-- **Publish date**: When the article was published
-- **URL**: The article's URL
-- **Date saved**: When you saved the article to Instapaper
-- **Tags**: Tags from Instapaper
-- **Source**: A static value (e.g., "instapaper")
+- **Title**: The article's title (default: `title`, _disabled_)
+- **Author**: The article's author (default: `author`)
+- **URL**: The article's URL (default: `url`)
+- **Publish date**: When the article was published (default: `pubdate`)
+- **Date saved**: When you saved the article to Instapaper (default: `date`)
+- **Tags**: Tags from Instapaper (default: `tags`)
+- **Source**: A static string value (default: `instapaper`, _disabled_)
 
 Properties are only added to notes when they have values available from Instapaper.
 
