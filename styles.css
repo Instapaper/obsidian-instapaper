@@ -5,7 +5,30 @@
 
 .instapaper-article-properties input[type="text"]:invalid,
 .instapaper-connect-account input[type="text"]:invalid,
-.instapaper-connect-account input[type="password"]:invalid {
+.instapaper-connect-account input[type="password"]:invalid,
+textarea.instapaper-highlight-template:invalid {
     border-color: var(--background-modifier-error) !important;
     background-color: rgba(var(--background-modifier-error-rgb), 0.2) !important;
+}
+
+.instapaper-highlight-template-setting {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.instapaper-highlight-template-setting .setting-item-info {
+    margin-bottom: 0.5em;
+}
+
+.instapaper-highlight-template-setting .setting-item-control {
+    width: 100%;
+}
+
+textarea.instapaper-highlight-template {
+    font-family: var(--font-monospace);
+    width: 100%;
+}
+
+.instapaper-update-action button {
+    color: var(--interactive-accent);
 }

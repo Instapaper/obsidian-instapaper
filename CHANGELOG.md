@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Block identifiers for highlights using Obsidian's block reference syntax (`^h{highlight_id}`). This enables linking to specific highlights and provides more robust duplicate detection.
 - Customizable article properties: choose which properties to include and rename them to match your preferred naming scheme.
+- Customizable notes templates: use [Mustache](https://mustache.github.io/) templates to fully control how highlights appear in your notes
 
 ### Changed
 

@@ -1,4 +1,4 @@
-import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, TextComponent, TFolder, normalizePath } from "obsidian";
+import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, TextAreaComponent, TextComponent, TFolder, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount } from "./api";
 
@@ -21,6 +21,20 @@ export interface FrontmatterSettings {
     source: FrontmatterValueField;
 }
 
+// The highlight template used before template customization was introduced.
+// Used for settings migration only — do not change.
+export const LEGACY_HIGHLIGHT_TEMPLATE = `> {{text}} [↗]({{link}}) {{blockId}}
+{{#note}}
+
+{{note}}
+{{/note}}`;
+
+const DEFAULT_HIGHLIGHT_TEMPLATE = `> {{text}} {{blockId}}
+{{#note}}
+
+{{note}}
+{{/note}}`;
+
 export interface InstapaperPluginSettings {
     token?: InstapaperAccessToken;
     account?: InstapaperAccount;
@@ -29,6 +43,8 @@ export interface InstapaperPluginSettings {
     notesFolder: string;
     notesCursor: number;
     frontmatter: FrontmatterSettings;
+    highlightTemplate: string;
+    appliedHighlightTemplate: string;
 }
 
 export const DEFAULT_SETTINGS = {
@@ -45,6 +61,8 @@ export const DEFAULT_SETTINGS = {
         tags: { enabled: true, propertyName: 'tags' },
         source: { enabled: false, propertyName: 'source', value: 'instapaper' },
     },
+    highlightTemplate: DEFAULT_HIGHLIGHT_TEMPLATE,
+    appliedHighlightTemplate: DEFAULT_HIGHLIGHT_TEMPLATE,
 } as const satisfies Partial<InstapaperPluginSettings>
 
 export class InstapaperSettingTab extends PluginSettingTab {
@@ -164,6 +182,87 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     })
                 });
         });
+
+        group.addSetting((setting) => {
+            let textareaComponent: TextAreaComponent;
+
+            setting.setName('Template');
+            setting.descEl.createDiv({ cls: 'setting-item-description' }, (el) => {
+                el.appendText('Available variables: ');
+                el.createEl('code', { text: '{{text}}' });
+                el.appendText(', ');
+                el.createEl('code', { text: '{{link}}' });
+                el.appendText(', ');
+                el.createEl('code', { text: '{{blockId}}' });
+                el.appendText(', ');
+                el.createEl('code', { text: '{{note}}' });
+                el.createEl('br');
+                el.appendText('Conditional sections: ');
+                el.createEl('code', { text: '{{#note}}...{{/note}}' });
+                el.createEl('br');
+                const resetLink = el.createEl('a', {
+                    text: 'Reset to default',
+                    href: '#'
+                });
+                resetLink.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    textareaComponent.setValue(DEFAULT_HIGHLIGHT_TEMPLATE);
+                    await this.plugin.saveSettings({
+                        highlightTemplate: DEFAULT_HIGHLIGHT_TEMPLATE
+                    });
+                });
+                el.appendText(' · ');
+                el.createEl('a', {
+                    text: 'Mustache syntax guide',
+                    href: 'https://mustache.github.io/mustache.5.html'
+                });
+            });
+            setting.setClass('instapaper-highlight-template-setting');
+
+            setting.addTextArea((textarea) => {
+                textareaComponent = textarea;
+                textarea.setValue(this.plugin.settings.highlightTemplate);
+                textarea.inputEl.rows = 6;
+                textarea.inputEl.addClass('instapaper-highlight-template');
+                textarea.inputEl.required = true;
+                textarea.onChange(async (value) => {
+                    await this.plugin.saveSettings({
+                        highlightTemplate: value
+                    });
+                });
+            });
+        });
+
+        group.addSetting((setting) => {
+            setting
+                .setName('Update existing notes')
+                .setDesc('Update existing notes to use the current template.')
+                .setClass('instapaper-update-action')
+                .addButton((button) => {
+                    button
+                        .setButtonText('Update')
+                        .setTooltip('Update highlights in existing notes')
+                        .onClick(async () => {
+                            try {
+                                await this.plugin.runSync('settings',
+                                    { resync: true, saveCursor: false },
+                                    {
+                                        createFiles: false,
+                                        syncHighlights: false,
+                                        syncProperties: false,
+                                        updateHighlightTemplate: {
+                                            from: this.plugin.settings.appliedHighlightTemplate,
+                                            to: this.plugin.settings.highlightTemplate,
+                                        },
+                                    });
+                                this.plugin.notice('Updated Instapaper notes');
+                            } catch (e) {
+                                this.plugin.log('Sync failed:', e);
+                                this.plugin.notice('Failed to update highlights');
+                            }
+                        });
+                });
+        });
     }
 
     private addFrontmatterSettings(containerEl: HTMLElement) {
@@ -259,7 +358,8 @@ export class InstapaperSettingTab extends PluginSettingTab {
 
             setting
                 .setName('Update existing notes')
-                .setDesc(makeDesc());
+                .setDesc(makeDesc())
+                .setClass('instapaper-update-action');
 
             let button: ButtonComponent;
             let removeDisabledProperties = false;
@@ -279,15 +379,19 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     .setButtonText('Update')
                     .setTooltip('Update existing notes from Instapaper')
                     .onClick(async () => {
-                        await this.plugin.runSync('settings',
-                            { resync: true, saveCursor: false },
-                            {
-                                createFiles: false,
-                                removeDisabledProperties,
-                            }).catch(e => {
-                                this.plugin.log('Sync failed:', e);
-                                this.plugin.notice('Failed to sync with Instapaper');
-                            });;
+                        try {
+                            await this.plugin.runSync('settings',
+                                { resync: true, saveCursor: false },
+                                {
+                                    createFiles: false,
+                                    syncHighlights: false,
+                                    removeDisabledProperties,
+                                });
+                            this.plugin.notice('Updated Instapaper notes');
+                        } catch (e) {
+                            this.plugin.log('Sync failed:', e);
+                            this.plugin.notice('Failed to sync with Instapaper');
+                        }
                     });
             });
         });

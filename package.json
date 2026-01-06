@@ -17,6 +17,7 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@eslint/js": "^9.39.1",
+		"@types/mustache": "^4.2.6",
 		"@types/node": "^16.18.126",
 		"builtin-modules": "5.0.0",
 		"dotenv": "^17.3.1",
@@ -30,6 +31,7 @@
 	"dependencies": {
 		"hmacsha1": "^1.0.0",
 		"merge-options": "^3.0.4",
+		"mustache": "^4.2.0",
 		"oauth-1.0a": "^2.2.6"
 	}
 }

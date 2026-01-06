@@ -1,9 +1,11 @@
 import { TFile, Vault, normalizePath } from "obsidian";
+import Mustache from "mustache";
 import type InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight } from "./api";
 import { applyArticleFrontmatter } from "./frontmatter";
 
-const linkSymbol = '↗';
+// Disable HTML escaping. We render to Markdown.
+Mustache.escape = (text) => text;
 
 export interface SyncNotesOptions {
     /**
@@ -13,6 +15,18 @@ export interface SyncNotesOptions {
     createFiles?: boolean;
 
     /**
+     * Whether to update frontmatter properties.
+     * @default true
+     */
+    syncProperties?: boolean;
+
+    /**
+     * Whether to remove disabled frontmatter properties.
+     * @default false
+     */
+    removeDisabledProperties?: boolean;
+
+    /**
      * Whether to sync highlights to notes.
      * When false, only frontmatter is updated.
      * @default true
@@ -20,10 +34,10 @@ export interface SyncNotesOptions {
     syncHighlights?: boolean;
 
     /**
-     * Whether to remove disabled frontmatter properties.
-     * @default false
+     * Replace highlights rendered with `from` template using `to` template.
+     * Highlights that don't match the `from` rendering are skipped.
      */
-    removeDisabledProperties?: boolean;
+    updateHighlightTemplate?: { from: string; to: string };
 
     /**
      * Maximum number of consecutive API errors before failing.
@@ -41,14 +55,16 @@ export async function syncNotes(
     cursor: number;
     count: number;
 }> {
-    const opts: Required<SyncNotesOptions> = {
+    const opts = {
         createFiles: true,
-        syncHighlights: true,
+        syncProperties: true,
         removeDisabledProperties: false,
+        syncHighlights: true,
         maxErrors: 3,
         ...options
     };
     const { vault, fileManager } = plugin.app;
+    const template = plugin.settings.highlightTemplate;
 
     const folder = normalizePath(plugin.settings.notesFolder);
     if (!await vault.adapter.exists(folder)) {
@@ -102,20 +118,33 @@ export async function syncNotes(
             }
 
             // Refresh the file's front matter (for new and existing files).
-            await applyArticleFrontmatter(
-                file,
-                article,
-                plugin.settings.frontmatter,
-                fileManager,
-                { removeDisabled: opts.removeDisabledProperties }
-            );
+            if (opts.syncProperties) {
+                await applyArticleFrontmatter(
+                    file,
+                    article,
+                    plugin.settings.frontmatter,
+                    fileManager,
+                    { removeDisabled: opts.removeDisabledProperties }
+                );
+            }
+
+            // Update existing highlights if a template replacement is requested.
+            if (opts.updateHighlightTemplate) {
+                const { from, to } = opts.updateHighlightTemplate;
+                const oldContent = contentForHighlight(highlight, from).trimEnd();
+                const newContent = contentForHighlight(highlight, to).trimEnd();
+                const content = await vault.read(file);
+                if (content.contains(oldContent)) {
+                    await vault.modify(file, content.replace(oldContent, newContent));
+                }
+            }
 
             // Append this highlight if syncing is enabled and it doesn't already
             // exist in the file.
             if (opts.syncHighlights) {
                 const content = await vault.read(file);
                 if (!hasHighlight(content, highlight)) {
-                    await vault.append(file, contentForHighlight(highlight));
+                    await vault.append(file, contentForHighlight(highlight, template));
                     count++;
                 }
             }
@@ -157,15 +186,27 @@ function hasHighlight(content: string, highlight: InstapaperHighlight): boolean 
         || content.contains(linkForHighlight(highlight));
 }
 
-function contentForHighlight(highlight: InstapaperHighlight): string {
-    let content = highlight.text.replace(/^/gm, '> ');
-    content += ` [${linkSymbol}](${linkForHighlight(highlight)})`;
-    content += ` ${blockIdentifierForHighlight(highlight)}`;
-    content += "\n\n"
-    if (highlight.note) {
-        content += highlight.note + "\n\n";
+function contentForHighlight(
+    highlight: InstapaperHighlight,
+    template: string,
+): string {
+    const blockId = blockIdentifierForHighlight(highlight);
+
+    let content = Mustache.render(template, {
+        text: highlight.text,
+        note: highlight.note,
+        link: linkForHighlight(highlight),
+        blockId: blockId,
+    });
+
+    // Ensure block identifier is always present for duplicate detection,
+    // and that it's preceded by a space (required by Obsidian).
+    if (!content.contains(blockId)) {
+        content = content.trimEnd() + ` ${blockId}`;
+    } else if (!content.contains(` ${blockId}`) && !content.contains(`\n${blockId}`)) {
+        content = content.replace(blockId, ` ${blockId}`);
     }
 
-    return content;
+    // Ensure spacing between highlights.
+    return content.trimEnd() + '\n\n';
 }
-
