@@ -8,7 +8,7 @@ It integrates with your Instapaper account and allows you to:
 - Save URLs from Obsidian notes to your Instapaper account
 - Sync your highlights and notes to your Obsidian vault
 
-<img src="screenshot.png" width="640px"/>
+![Synced Instapaper note in Obsidian](docs/note.png)
 
 ## Setup
 
@@ -28,6 +28,22 @@ Each synced highlight includes a [block identifier](https://help.obsidian.md/Lin
 
 - Obsidian tags cannot contain spaces. We replace runs of one or more spaces with a hyphen (`-`).
 - Obsidian tags must contain a least one non-numeric character. We append an underscore (`_`) to any entirely numeric Instapaper tag.
+
+## Customization
+
+### Article Properties
+
+You can customize which article properties are included in your synced notes. In the plugin settings under **Article properties**, you can set and rename any of these properties:
+
+- **Title**: The article's title (default: `title`, _disabled_)
+- **Author**: The article's author (default: `author`)
+- **URL**: The article's URL (default: `url`)
+- **Publish date**: When the article was published (default: `pubdate`)
+- **Date saved**: When you saved the article to Instapaper (default: `date`)
+- **Tags**: Tags from Instapaper (default: `tags`)
+- **Source**: A static string value (default: `instapaper`, _disabled_)
+
+Properties are only added to notes when they have values available from Instapaper.
 
 ## Feedback
 

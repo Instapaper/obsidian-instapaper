@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Block identifiers for highlights using Obsidian's block reference syntax (`^h{highlight_id}`). This enables linking to specific highlights and provides more robust duplicate detection.
+- Customizable article properties: choose which properties to include and rename them to match your preferred naming scheme.
 
 ### Changed
 

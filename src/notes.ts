@@ -62,16 +62,31 @@ export async function syncNotes(
             }
 
             // Refresh the file's front matter (for new and existing files).
+            // Property order is preserved for existing files while new files
+            // will have properties in the order added below.
             fileManager.processFrontMatter(file, (frontmatter) => {
-                frontmatter['url'] = article.url;
-                frontmatter['date'] = formatTimestamp(article.time);
-                frontmatter['tags'] = (article.tags.length > 0)
-                    ? article.tags.map(normalizeTag) : undefined;
-                if (article.pubtime) {
-                    frontmatter['pubdate'] = formatTimestamp(article.pubtime);
+                const fm = plugin.settings.frontmatter;
+
+                if (fm.title.enabled && fm.title.propertyName) {
+                    frontmatter[fm.title.propertyName] = article.title;
                 }
-                if (article.author) {
-                    frontmatter['author'] = article.author;
+                if (fm.author.enabled && fm.author.propertyName && article.author) {
+                    frontmatter[fm.author.propertyName] = article.author;
+                }
+                if (fm.url.enabled && fm.url.propertyName) {
+                    frontmatter[fm.url.propertyName] = article.url;
+                }
+                if (fm.pubdate.enabled && fm.pubdate.propertyName && article.pubtime) {
+                    frontmatter[fm.pubdate.propertyName] = formatTimestamp(article.pubtime);
+                }
+                if (fm.date.enabled && fm.date.propertyName) {
+                    frontmatter[fm.date.propertyName] = formatTimestamp(article.time);
+                }
+                if (fm.tags.enabled && fm.tags.propertyName && article.tags.length > 0) {
+                    frontmatter[fm.tags.propertyName] = article.tags.map(normalizeTag);
+                }
+                if (fm.source.enabled && fm.source.propertyName) {
+                    frontmatter[fm.source.propertyName] = fm.source.value;
                 }
             })
 

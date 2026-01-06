@@ -1,0 +1,9 @@
+.instapaper-article-properties input[type="text"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.instapaper-article-properties input[type="text"]:invalid {
+    border-color: var(--background-modifier-error) !important;
+    background-color: rgba(var(--background-modifier-error-rgb), 0.2) !important;
+}

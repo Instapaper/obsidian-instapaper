@@ -1,6 +1,25 @@
-import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, TFolder, normalizePath } from "obsidian";
+import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, TextComponent, TFolder, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount } from "./api";
+
+interface FrontmatterField {
+    enabled: boolean;
+    propertyName: string;
+}
+
+interface FrontmatterValueField extends FrontmatterField {
+    value: string;
+}
+
+interface ArticleFrontmatterSettings {
+    url: FrontmatterField;
+    title: FrontmatterField;
+    date: FrontmatterField;
+    pubdate: FrontmatterField;
+    author: FrontmatterField;
+    tags: FrontmatterField;
+    source: FrontmatterValueField;
+}
 
 export interface InstapaperPluginSettings {
     token?: InstapaperAccessToken;
@@ -9,6 +28,7 @@ export interface InstapaperPluginSettings {
     syncOnStart: boolean;
     notesFolder: string;
     notesCursor: number;
+    frontmatter: ArticleFrontmatterSettings;
 }
 
 export const DEFAULT_SETTINGS: Partial<InstapaperPluginSettings> = {
@@ -16,6 +36,15 @@ export const DEFAULT_SETTINGS: Partial<InstapaperPluginSettings> = {
     syncOnStart: true,
     notesFolder: 'Instapaper Notes',
     notesCursor: 0,
+    frontmatter: {
+        url: { enabled: true, propertyName: 'url' },
+        title: { enabled: false, propertyName: 'title' },
+        date: { enabled: true, propertyName: 'date' },
+        pubdate: { enabled: true, propertyName: 'pubdate' },
+        author: { enabled: true, propertyName: 'author' },
+        tags: { enabled: true, propertyName: 'tags' },
+        source: { enabled: false, propertyName: 'source', value: 'instapaper' },
+    },
 }
 
 export class InstapaperSettingTab extends PluginSettingTab {
@@ -36,6 +65,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
         if (this.plugin.settings.account) {
             this.addSyncSettings(containerEl);
             this.addNotesSettings(containerEl);
+            this.addFrontmatterSettings(containerEl);
         }
     }
 
@@ -134,6 +164,88 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     })
                 });
         });
+    }
+
+    private addFrontmatterSettings(containerEl: HTMLElement) {
+        const group = new SettingGroup(containerEl)
+            .setHeading('Article properties')
+            .addClass('instapaper-article-properties');
+
+        group.addSetting((setting) => {
+            setting.setDesc('Configure which article properties to add. Properties are only added when available.');
+        });
+
+        const addField = (
+            name: string,
+            description: string,
+            fieldKey: keyof ArticleFrontmatterSettings,
+        ) => {
+            group.addSetting((setting) => {
+                setting
+                    .setName(name)
+                    .setDesc(description);
+
+                const config = this.plugin.settings.frontmatter[fieldKey];
+                const placeholder = DEFAULT_SETTINGS.frontmatter?.[fieldKey]?.propertyName ?? '';
+
+                let propertyNameText: TextComponent;
+                setting.addText((text) => {
+                    propertyNameText = text;
+                    text.setPlaceholder(placeholder);
+                    text.setValue(config.propertyName);
+                    text.setDisabled(!config.enabled);
+                    text.inputEl.required = config.enabled;
+                    text.inputEl.minLength = 1;
+                    text.inputEl.pattern = '^[a-zA-Z_][a-zA-Z0-9_\\-]*$';
+                    text.inputEl.title = 'Property name must start with a letter or underscore, followed by letters, numbers, underscores, or hyphens';
+
+                    text.onChange(async (value) => {
+                        config.propertyName = value.trim();
+                        await this.plugin.saveSettings({
+                            frontmatter: this.plugin.settings.frontmatter
+                        });
+                    });
+                });
+
+                let valueText: TextComponent | undefined;
+                if ('value' in this.plugin.settings.frontmatter[fieldKey]) {
+                    setting.addText((text) => {
+                        valueText = text;
+                        const valueConfig = this.plugin.settings.frontmatter[fieldKey] as FrontmatterValueField;
+                        text.setPlaceholder('Value');
+                        text.setValue(valueConfig.value);
+                        text.setDisabled(!config.enabled);
+                        text.onChange(async (value) => {
+                            valueConfig.value = value;
+                            await this.plugin.saveSettings({
+                                frontmatter: this.plugin.settings.frontmatter
+                            });
+                        });
+                    });
+                }
+
+                setting.addToggle((toggle) => {
+                    toggle.setValue(config.enabled);
+                    toggle.onChange(async (value) => {
+                        config.enabled = value;
+                        propertyNameText.setDisabled(!value);
+                        propertyNameText.inputEl.required = value;
+                        valueText?.setDisabled(!value);
+                        await this.plugin.saveSettings({
+                            frontmatter: this.plugin.settings.frontmatter
+                        });
+                    });
+                });
+            });
+        };
+
+        addField("Title", "The article's title", "title");
+        addField("Author", "The article's author", "author");
+        addField("URL", "The article's URL", "url");
+        addField("Publish date", "When the article was published", "pubdate");
+        addField("Saved date", "When you saved the article to Instapaper", "date");
+        addField("Tags", "Tags from Instapaper", "tags");
+        addField("Source", 'A static value (e.g., "instapaper")', "source");
     }
 }
 
