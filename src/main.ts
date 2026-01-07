@@ -179,6 +179,7 @@ export default class InstapaperPlugin extends Plugin {
 		await this.saveSettings({
 			token: undefined,
 			account: undefined,
+			notesCursor: undefined,
 		});
 
 		this.clearSyncInterval();
