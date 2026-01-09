@@ -89,13 +89,6 @@ export class InstapaperSettingTab extends PluginSettingTab {
             setting
                 .setDesc('Connect your Instapaper account')
                 .addButton((button) => {
-                    button.setButtonText('Create Account');
-                    button.setTooltip('Create a new Instapaper account')
-                    button.onClick(() => {
-                        window.open('https://www.instapaper.com/user/register', '_blank');
-                    });
-                })
-                .addButton((button) => {
                     button.setButtonText('Connect');
                     button.setTooltip('Connect your Instapaper account')
                     button.setCta();
@@ -284,7 +277,6 @@ class ConnectAccountModal extends Modal {
             setting
                 .setName("Email")
                 .addText((text) => {
-                    text.inputEl.title = 'Email address or username';
                     text.inputEl.addEventListener('blur', () => {
                         text.inputEl.required = true;
                     });
@@ -307,6 +299,16 @@ class ConnectAccountModal extends Modal {
                     });
                     passwordEl = text.inputEl;
                 });
+        });
+
+        group.addSetting((setting) => {
+            const descEl = setting.descEl;
+            descEl.createSpan({ text: "If you don't have an account, you can " });
+            descEl.createEl('a', {
+                text: 'create one',
+                href: 'https://www.instapaper.com/user/register',
+            });
+            descEl.createSpan({ text: ' on the Instapaper website.' });
         });
 
         const footer = this.modalEl.createDiv({ cls: 'modal-button-container' });
