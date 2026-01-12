@@ -48,6 +48,12 @@ npm run lint
 
 Also make sure that `minAppVersion` in `manifest.json` always reflects the minimum required Obsidian version expected by the plugin code.
 
+## Beta Releases
+
+From time to time, we may release "beta" or "preview" versions. These are GitHub releases that aren't published to `main` (which would make them available to add Obsidian users).
+
+To test one of these versions, you can use the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat).
+
 ## License
 
 By contributing to this project, you agree that your contributions will be licensed under its [license](LICENSE).

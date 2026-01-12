@@ -45,10 +45,6 @@ You can customize which article properties are included in your synced notes. In
 
 Properties are only added to notes when they have values available from Instapaper.
 
-## Testing Development Versions
-
-To test the latest development version before official releases, you can use the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat). BRAT allows you to install and update the plugin directly from this GitHub repository.
-
 ## Feedback
 
 Please send general feedback to: <support@help.instapaper.com>
