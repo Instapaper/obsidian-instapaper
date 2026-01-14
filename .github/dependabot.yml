@@ -9,14 +9,13 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-patch"]
     groups:
       eslint:
+        applies-to: version-updates
         patterns:
           - '@eslint/*'
           - 'eslint'
           - 'typescript-eslint'
-        update-types:
-          - 'major'
+    ignore:
+      - dependency-name: "*eslint*"
+        update-types: ["version-update:semver-patch"]
