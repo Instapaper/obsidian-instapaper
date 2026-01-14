@@ -18,4 +18,6 @@ updates:
           - 'typescript-eslint'
     ignore:
       - dependency-name: "*eslint*"
-        update-types: ["version-update:semver-patch"]
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-patch
