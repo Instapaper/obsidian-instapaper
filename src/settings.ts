@@ -31,7 +31,7 @@ export interface InstapaperPluginSettings {
     frontmatter: ArticleFrontmatterSettings;
 }
 
-export const DEFAULT_SETTINGS: Partial<InstapaperPluginSettings> = {
+export const DEFAULT_SETTINGS = {
     syncFrequency: 0,
     syncOnStart: true,
     notesFolder: 'Instapaper Notes',
@@ -45,7 +45,7 @@ export const DEFAULT_SETTINGS: Partial<InstapaperPluginSettings> = {
         tags: { enabled: true, propertyName: 'tags' },
         source: { enabled: false, propertyName: 'source', value: 'instapaper' },
     },
-}
+} as const satisfies Partial<InstapaperPluginSettings>
 
 export class InstapaperSettingTab extends PluginSettingTab {
     plugin: InstapaperPlugin;
