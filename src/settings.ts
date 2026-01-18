@@ -249,9 +249,17 @@ export class InstapaperSettingTab extends PluginSettingTab {
 
         group.addSetting((setting) => {
             const desc = 'Update existing notes to use these properties';
+            const makeDesc = (withRemoval: boolean = false) => withRemoval
+                ? createFragment((frag) => {
+                    frag.appendText(`${desc}, `);
+                    frag.createEl('strong', { text: 'removing disabled properties' });
+                    frag.appendText('.');
+                })
+                : `${desc}.`;
+
             setting
                 .setName('Update existing notes')
-                .setDesc(desc);
+                .setDesc(makeDesc());
 
             let button: ButtonComponent;
             let removeDisabledProperties = false;
@@ -260,10 +268,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                 toggle.setValue(removeDisabledProperties);
                 toggle.onChange((value) => {
                     removeDisabledProperties = value;
-                    setting.setDesc(value
-                        ? `${desc}, removing disabled properties`
-                        : desc
-                    );
+                    setting.setDesc(makeDesc(value));
                 });
                 toggle.setTooltip('Remove disabled properties?');
             });
