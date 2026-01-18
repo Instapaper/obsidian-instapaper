@@ -1,7 +1,7 @@
 import { Keymap, Notice, Plugin, TFolder } from 'obsidian';
 import { InstapaperAccount, InstapaperAPI } from './api'
 import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab } from './settings'
-import { syncNotes } from './notes';
+import { syncNotes, type SyncNotesOptions } from './notes';
 import mergeOptions from 'merge-options';
 
 type SyncResult = {
@@ -61,7 +61,7 @@ export default class InstapaperPlugin extends Plugin {
 						.setSection("Instapaper")
 						.onClick((evt) => {
 							const resync = Keymap.isModifier(evt, "Mod");
-							this.runSync('manual', resync)
+							this.runSync('manual', { resync })
 								.then(result => this.reportSyncResult(result))
 								.catch(e => {
 									this.log('Sync failed:', e);
@@ -187,9 +187,13 @@ export default class InstapaperPlugin extends Plugin {
 
 	// SYNC
 
-	async runSync(reason: string, resync = false): Promise<SyncResult> {
+	async runSync(
+		reason: string,
+		control?: { resync?: boolean; saveCursor?: boolean },
+		options?: SyncNotesOptions
+	): Promise<SyncResult> {
 		const result = { notes: 0 };
-		const cursor = resync ? 0 : this.settings.notesCursor;
+		const cursor = (control?.resync ?? false) ? 0 : this.settings.notesCursor;
 
 		const token = this.settings.token;
 		if (!token) return result;
@@ -203,9 +207,11 @@ export default class InstapaperPlugin extends Plugin {
 		this.log(`synchronizing (${reason}) @ ${cursor}`);
 
 		try {
-			const { cursor: newCursor, count } = await syncNotes(this, token, cursor);
+			const { cursor: newCursor, count } = await syncNotes(this, token, cursor, options);
 			result.notes = count;
-			await this.saveSettings({ notesCursor: newCursor });
+			if (control?.saveCursor ?? true) {
+				await this.saveSettings({ notesCursor: newCursor });
+			}
 		} catch (e) {
 			this.log('sync failure:', e);
 		} finally {
