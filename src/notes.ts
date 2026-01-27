@@ -1,28 +1,66 @@
-import { TFile, Vault, moment, normalizePath } from "obsidian";
+import { TFile, Vault, normalizePath } from "obsidian";
 import type InstapaperPlugin from "./main";
-import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight, InstapaperTag } from "./api";
+import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight } from "./api";
+import { applyArticleFrontmatter } from "./frontmatter";
 
 const linkSymbol = '↗';
+
+export interface SyncNotesOptions {
+    /**
+     * Whether to create new files for articles.
+     * @default true
+     */
+    createFiles?: boolean;
+
+    /**
+     * Whether to sync highlights to notes.
+     * When false, only frontmatter is updated.
+     * @default true
+     */
+    syncHighlights?: boolean;
+
+    /**
+     * Whether to remove disabled frontmatter properties.
+     * @default false
+     */
+    removeDisabledProperties?: boolean;
+
+    /**
+     * Maximum number of consecutive API errors before failing.
+     * @default 3
+     */
+    maxErrors?: number;
+}
 
 export async function syncNotes(
     plugin: InstapaperPlugin,
     token: InstapaperAccessToken,
     cursor: number,
+    options?: SyncNotesOptions
 ): Promise<{
     cursor: number;
     count: number;
 }> {
+    const opts: Required<SyncNotesOptions> = {
+        createFiles: true,
+        syncHighlights: true,
+        removeDisabledProperties: false,
+        maxErrors: 3,
+        ...options
+    };
     const { vault, fileManager } = plugin.app;
 
     const folder = normalizePath(plugin.settings.notesFolder);
     if (!await vault.adapter.exists(folder)) {
-        await vault.createFolder(folder)
+        if (!opts.createFiles) {
+            return { cursor, count: 0 };
+        }
+        await vault.createFolder(folder);
         cursor = 0;
     }
 
     let count = 0;
     let errors = 0;
-    const maxErrors = 3;
 
     while (true) {
         let highlights: InstapaperHighlight[];
@@ -36,8 +74,8 @@ export async function syncNotes(
             errors = 0; // Reset on success
         } catch (e) {
             plugin.log('Failed to get highlights:', e);
-            if (++errors >= maxErrors) {
-                plugin.log(`Stopping sync after ${maxErrors} consecutive errors`);
+            if (++errors >= opts.maxErrors) {
+                plugin.log(`Stopping sync after ${opts.maxErrors} consecutive errors`);
                 break;
             }
             continue;
@@ -51,52 +89,35 @@ export async function syncNotes(
             const article = bookmarks[highlight.article_id];
             if (!article) continue;
 
-            // Resolve a TFile for this article. This will either be an
-            // existing file or a new, empty file.
-            let file: TFile;
+            // Resolve a TFile for this article. This will be an existing file,
+            // a new (empty) file if creation is enabled, or null if it doesn't
+            // exist and wasn't created (in which case we skip this article).
+            let file: TFile | null;
             try {
-                file = await fileForArticle(article, vault, folder);
+                file = await fileForArticle(article, vault, folder, opts.createFiles);
+                if (!file) continue;
             } catch (e) {
                 plugin.log(`fileForArticle("${article.title}"):`, e);
                 continue;
             }
 
             // Refresh the file's front matter (for new and existing files).
-            // Property order is preserved for existing files while new files
-            // will have properties in the order added below.
-            fileManager.processFrontMatter(file, (frontmatter) => {
-                const fm = plugin.settings.frontmatter;
+            await applyArticleFrontmatter(
+                file,
+                article,
+                plugin.settings.frontmatter,
+                fileManager,
+                { removeDisabled: opts.removeDisabledProperties }
+            );
 
-                if (fm.title.enabled && fm.title.propertyName) {
-                    frontmatter[fm.title.propertyName] = article.title;
+            // Append this highlight if syncing is enabled and it doesn't already
+            // exist in the file.
+            if (opts.syncHighlights) {
+                const content = await vault.read(file);
+                if (!hasHighlight(content, highlight)) {
+                    await vault.append(file, contentForHighlight(highlight));
+                    count++;
                 }
-                if (fm.author.enabled && fm.author.propertyName && article.author) {
-                    frontmatter[fm.author.propertyName] = article.author;
-                }
-                if (fm.url.enabled && fm.url.propertyName) {
-                    frontmatter[fm.url.propertyName] = article.url;
-                }
-                if (fm.pubdate.enabled && fm.pubdate.propertyName && article.pubtime) {
-                    frontmatter[fm.pubdate.propertyName] = formatTimestamp(article.pubtime);
-                }
-                if (fm.date.enabled && fm.date.propertyName) {
-                    frontmatter[fm.date.propertyName] = formatTimestamp(article.time);
-                }
-                if (fm.tags.enabled && fm.tags.propertyName && article.tags.length > 0) {
-                    frontmatter[fm.tags.propertyName] = article.tags.map(normalizeTag);
-                }
-                if (fm.source.enabled && fm.source.propertyName) {
-                    frontmatter[fm.source.propertyName] = fm.source.value;
-                }
-            })
-
-            // We'll nearly always append the new highlight to the file, but
-            // we first check if the highlight has previously been added just
-            // in case the cursor was reset or is otherwise out-of-sync with
-            // the contents of the vault.
-            if (!hasHighlight(await vault.read(file), highlight)) {
-                await vault.append(file, contentForHighlight(highlight));
-                count++;
             }
         }
     }
@@ -108,7 +129,8 @@ async function fileForArticle(
     article: InstapaperBookmark,
     vault: Vault,
     folder: string,
-): Promise<TFile> {
+    create: boolean = true
+): Promise<TFile | null> {
     // Use a sanitized version of the article's title for our filename.
     let name = article.title.replace(/[\\/:<>?|*"]/gm, '').substring(0, 250).trim();
     if (!name) {
@@ -118,7 +140,7 @@ async function fileForArticle(
     const path = normalizePath(`${folder}/${name}.md`);
     const file = vault.getFileByPath(path);
 
-    return file || vault.create(path, '');
+    return file || (create ? vault.create(path, '') : null);
 }
 
 function linkForHighlight(highlight: InstapaperHighlight): string {
@@ -147,18 +169,3 @@ function contentForHighlight(highlight: InstapaperHighlight): string {
     return content;
 }
 
-function normalizeTag(tag: InstapaperTag): string {
-    // Obsidian tags cannot contain spaces.
-    let name = tag.name.trim().replace(/\s+/g, '-');
-
-    // Obsidian tags cannot be entirely numeric.
-    if (/^\d+$/.test(name)) {
-        name += "_";
-    }
-
-    return name;
-}
-
-function formatTimestamp(timestamp: number): string {
-    return moment.unix(timestamp).utc().format("YYYY-MM-DD");
-}

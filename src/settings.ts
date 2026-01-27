@@ -2,16 +2,16 @@ import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, T
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount } from "./api";
 
-interface FrontmatterField {
+export interface FrontmatterField {
     enabled: boolean;
     propertyName: string;
 }
 
-interface FrontmatterValueField extends FrontmatterField {
+export interface FrontmatterValueField extends FrontmatterField {
     value: string;
 }
 
-interface ArticleFrontmatterSettings {
+export interface FrontmatterSettings {
     url: FrontmatterField;
     title: FrontmatterField;
     date: FrontmatterField;
@@ -28,7 +28,7 @@ export interface InstapaperPluginSettings {
     syncOnStart: boolean;
     notesFolder: string;
     notesCursor: number;
-    frontmatter: ArticleFrontmatterSettings;
+    frontmatter: FrontmatterSettings;
 }
 
 export const DEFAULT_SETTINGS = {
@@ -178,7 +178,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
         const addField = (
             name: string,
             description: string,
-            fieldKey: keyof ArticleFrontmatterSettings,
+            fieldKey: keyof FrontmatterSettings,
         ) => {
             group.addSetting((setting) => {
                 setting
@@ -246,6 +246,51 @@ export class InstapaperSettingTab extends PluginSettingTab {
         addField("Saved date", "When you saved the article to Instapaper", "date");
         addField("Tags", "Tags from Instapaper", "tags");
         addField("Source", 'A static value (e.g., "instapaper")', "source");
+
+        group.addSetting((setting) => {
+            const desc = 'Update existing notes to use these properties';
+            const makeDesc = (withRemoval: boolean = false) => withRemoval
+                ? createFragment((frag) => {
+                    frag.appendText(`${desc}, `);
+                    frag.createEl('strong', { text: 'removing disabled properties' });
+                    frag.appendText('.');
+                })
+                : `${desc}.`;
+
+            setting
+                .setName('Update existing notes')
+                .setDesc(makeDesc());
+
+            let button: ButtonComponent;
+            let removeDisabledProperties = false;
+
+            setting.addToggle((toggle) => {
+                toggle.setValue(removeDisabledProperties);
+                toggle.onChange((value) => {
+                    removeDisabledProperties = value;
+                    setting.setDesc(makeDesc(value));
+                });
+                toggle.setTooltip('Remove disabled properties?');
+            });
+
+            setting.addButton((btn) => {
+                button = btn;
+                button
+                    .setButtonText('Update')
+                    .setTooltip('Update existing notes from Instapaper')
+                    .onClick(async () => {
+                        await this.plugin.runSync('settings',
+                            { resync: true, saveCursor: false },
+                            {
+                                createFiles: false,
+                                removeDisabledProperties,
+                            }).catch(e => {
+                                this.plugin.log('Sync failed:', e);
+                                this.plugin.notice('Failed to sync with Instapaper');
+                            });;
+                    });
+            });
+        });
     }
 }
 
