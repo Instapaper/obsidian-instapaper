@@ -236,7 +236,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
         group.addSetting((setting) => {
             setting
                 .setName('Update existing notes')
-                .setDesc('Update existing notes to use the current template.')
+                .setDesc('Update existing notes to use the current template. Your local edits will be preserved.')
                 .setClass('instapaper-update-action')
                 .addButton((button) => {
                     button
