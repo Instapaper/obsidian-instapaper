@@ -133,5 +133,5 @@ function normalizeTag(tag: InstapaperTag): string {
 
 // https://help.obsidian.md/properties#Date
 function formatTimestamp(timestamp: number): string {
-    return moment.unix(timestamp).utc().format("YYYY-MM-DD");
+    return moment.unix(timestamp).format("YYYY-MM-DD");
 }
