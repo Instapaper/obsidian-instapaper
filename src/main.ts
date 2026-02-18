@@ -220,7 +220,7 @@ export default class InstapaperPlugin extends Plugin {
 			if (control?.saveCursor ?? true) {
 				await this.saveSettings({ notesCursor: newCursor });
 			}
-			if ((options?.syncHighlights ?? true) || options?.updateHighlightTemplate) {
+			if (options?.updateHighlightTemplate || ((options?.syncHighlights ?? true) && result.notes > 0)) {
 				await this.saveSettings({ appliedHighlightTemplate: this.settings.highlightTemplate });
 			}
 		} catch (e) {
