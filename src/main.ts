@@ -137,9 +137,10 @@ export default class InstapaperPlugin extends Plugin {
 		}
 
 		// Seed appliedHighlightTemplate for users upgrading from before this
-		// field existed. Uses their current highlightTemplate (or the default).
+		// field existed. Notes were written with the legacy format, regardless
+		// of whatever highlightTemplate is currently set.
 		if (data && !Object.hasOwnProperty.call(data, 'appliedHighlightTemplate')) {
-			data['appliedHighlightTemplate'] = data['highlightTemplate'] ?? LEGACY_HIGHLIGHT_TEMPLATE;
+			data['appliedHighlightTemplate'] = LEGACY_HIGHLIGHT_TEMPLATE;
 			needsSave = true;
 		}
 
