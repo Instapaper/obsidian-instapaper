@@ -37,7 +37,7 @@ export interface SyncNotesOptions {
      * Replace highlights rendered with `from` template using `to` template.
      * Highlights that don't match the `from` rendering are skipped.
      */
-    updateHighlightTemplate?: { from: string; to: string };
+    updateHighlightTemplate?: { from?: string; to: string };
 
     /**
      * Maximum number of consecutive API errors before failing.
@@ -131,19 +131,22 @@ export async function syncNotes(
             // Update existing highlights if a template replacement is requested.
             if (opts.updateHighlightTemplate) {
                 const { from, to } = opts.updateHighlightTemplate;
-                const oldContent = contentForHighlight(highlight, from).trimEnd();
-                const newContent = contentForHighlight(highlight, to).trimEnd();
-                const content = await vault.read(file);
-                if (content.contains(oldContent)) {
-                    await vault.modify(file, content.replace(oldContent, newContent));
+                const oldFormat = (from == null
+                    ? legacyContentForHighlight(highlight)
+                    : contentForHighlight(highlight, from)
+                ).trimEnd();
+                const newFormat = contentForHighlight(highlight, to).trimEnd();
+                const fileContent = await vault.read(file);
+                if (fileContent.contains(oldFormat)) {
+                    await vault.modify(file, fileContent.replace(oldFormat, newFormat));
                 }
             }
 
             // Append this highlight if syncing is enabled and it doesn't already
             // exist in the file.
             if (opts.syncHighlights) {
-                const content = await vault.read(file);
-                if (!hasHighlight(content, highlight)) {
+                const fileContent = await vault.read(file);
+                if (!hasHighlightMarker(fileContent, highlight)) {
                     await vault.append(file, contentForHighlight(highlight, template));
                     count++;
                 }
@@ -181,30 +184,41 @@ function blockIdentifierForHighlight(highlight: InstapaperHighlight): string {
     return `^h${highlight.highlight_id}`;
 }
 
-function hasHighlight(content: string, highlight: InstapaperHighlight): boolean {
+function hasHighlightMarker(content: string, highlight: InstapaperHighlight): boolean {
     return content.contains(blockIdentifierForHighlight(highlight))
         || content.contains(linkForHighlight(highlight));
+}
+
+// Reproduces the exact output of the pre-template code (1.1.5 release format).
+function legacyContentForHighlight(highlight: InstapaperHighlight): string {
+    let content = highlight.text.replace(/^/gm, '> ');
+    content += ` [↗](${linkForHighlight(highlight)})`;
+    content += '\n\n';
+    if (highlight.note) {
+        content += highlight.note + '\n\n';
+    }
+    return content.trimEnd() + '\n\n';
 }
 
 function contentForHighlight(
     highlight: InstapaperHighlight,
     template: string,
 ): string {
+    const link = linkForHighlight(highlight);
     const blockId = blockIdentifierForHighlight(highlight);
 
     let content = Mustache.render(template, {
         text: highlight.text,
         note: highlight.note,
-        link: linkForHighlight(highlight),
+        link: link,
         blockId: blockId,
     });
 
-    // Ensure block identifier is always present for duplicate detection,
-    // and that it's preceded by a space (required by Obsidian).
-    if (!content.contains(blockId)) {
+    // Ensure a deduplication anchor is present. If neither the link nor the
+    // block identifier is included, append the block identifier. Block
+    // identifiers must be preceded by a space (required by Obsidian).
+    if (!content.contains(link) && !content.contains(blockId)) {
         content = content.trimEnd() + ` ${blockId}`;
-    } else if (!content.contains(` ${blockId}`) && !content.contains(`\n${blockId}`)) {
-        content = content.replace(blockId, ` ${blockId}`);
     }
 
     // Ensure spacing between highlights.

@@ -22,8 +22,7 @@ export interface FrontmatterSettings {
 }
 
 // The highlight template used before template customization was introduced.
-// Used for settings migration only — do not change.
-export const LEGACY_HIGHLIGHT_TEMPLATE = `> {{text}} [↗]({{link}}) {{blockId}}
+export const LEGACY_HIGHLIGHT_TEMPLATE = `> {{text}} [↗]({{link}})
 {{#note}}
 
 {{note}}
@@ -44,7 +43,7 @@ export interface InstapaperPluginSettings {
     notesCursor: number;
     frontmatter: FrontmatterSettings;
     highlightTemplate: string;
-    appliedHighlightTemplate: string;
+    appliedHighlightTemplate?: string;
 }
 
 export const DEFAULT_SETTINGS = {
@@ -62,7 +61,6 @@ export const DEFAULT_SETTINGS = {
         source: { enabled: false, propertyName: 'source', value: 'instapaper' },
     },
     highlightTemplate: DEFAULT_HIGHLIGHT_TEMPLATE,
-    appliedHighlightTemplate: DEFAULT_HIGHLIGHT_TEMPLATE,
 } as const satisfies Partial<InstapaperPluginSettings>
 
 export class InstapaperSettingTab extends PluginSettingTab {
@@ -183,6 +181,10 @@ export class InstapaperSettingTab extends PluginSettingTab {
                 });
         });
 
+        const templateIsApplied = (template: string) =>
+            template === this.plugin.settings.appliedHighlightTemplate;
+
+        let updateButton: ButtonComponent;
         group.addSetting((setting) => {
             let textareaComponent: TextAreaComponent;
 
@@ -207,6 +209,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                 resetLink.addEventListener('click', async (e) => {
                     e.preventDefault();
                     textareaComponent.setValue(DEFAULT_HIGHLIGHT_TEMPLATE);
+                    updateButton?.setDisabled(templateIsApplied(DEFAULT_HIGHLIGHT_TEMPLATE));
                     await this.plugin.saveSettings({
                         highlightTemplate: DEFAULT_HIGHLIGHT_TEMPLATE
                     });
@@ -226,6 +229,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                 textarea.inputEl.addClass('instapaper-highlight-template');
                 textarea.inputEl.required = true;
                 textarea.onChange(async (value) => {
+                    updateButton?.setDisabled(templateIsApplied(value));
                     await this.plugin.saveSettings({
                         highlightTemplate: value
                     });
@@ -242,6 +246,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     button
                         .setButtonText('Update')
                         .setTooltip('Update highlights in existing notes')
+                        .setDisabled(templateIsApplied(this.plugin.settings.highlightTemplate))
                         .onClick(async () => {
                             try {
                                 await this.plugin.runSync('settings',
@@ -255,12 +260,14 @@ export class InstapaperSettingTab extends PluginSettingTab {
                                             to: this.plugin.settings.highlightTemplate,
                                         },
                                     });
+                                button.setDisabled(true);
                                 this.plugin.notice('Updated Instapaper notes');
                             } catch (e) {
                                 this.plugin.log('Sync failed:', e);
                                 this.plugin.notice('Failed to update highlights');
                             }
                         });
+                    updateButton = button;
                 });
         });
     }
