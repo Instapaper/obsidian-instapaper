@@ -141,6 +141,7 @@ export default class InstapaperPlugin extends Plugin {
 		// of whatever highlightTemplate is currently set.
 		if (data && !Object.hasOwnProperty.call(data, 'appliedHighlightTemplate')) {
 			data['appliedHighlightTemplate'] = LEGACY_HIGHLIGHT_TEMPLATE;
+			data['highlightTemplate'] = LEGACY_HIGHLIGHT_TEMPLATE;
 			needsSave = true;
 		}
 
