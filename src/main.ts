@@ -1,11 +1,11 @@
 import { Keymap, Notice, Plugin, TFolder } from 'obsidian';
 import { InstapaperAccount, InstapaperAPI } from './api'
-import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab } from './settings'
+import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab, LEGACY_HIGHLIGHT_TEMPLATE } from './settings'
 import { syncNotes, type SyncNotesOptions } from './notes';
 import mergeOptions from 'merge-options';
 
 type SyncResult = {
-	notes: number
+	notes: number;
 }
 
 export default class InstapaperPlugin extends Plugin {
@@ -136,6 +136,14 @@ export default class InstapaperPlugin extends Plugin {
 			needsSave = true;
 		}
 
+		// Seed highlightTemplate for users upgrading from before template
+		// customization was introduced. Existing notes were written with
+		// the legacy format.
+		if (data && !Object.hasOwnProperty.call(data, 'appliedHighlightTemplate')) {
+			data['highlightTemplate'] = LEGACY_HIGHLIGHT_TEMPLATE;
+			needsSave = true;
+		}
+
 		this.settings = mergeOptions(DEFAULT_SETTINGS, data ?? {});
 		if (needsSave) {
 			await this.saveSettings();
@@ -192,7 +200,7 @@ export default class InstapaperPlugin extends Plugin {
 		control?: { resync?: boolean; saveCursor?: boolean },
 		options?: SyncNotesOptions
 	): Promise<SyncResult> {
-		const result = { notes: 0 };
+		const result: SyncResult = { notes: 0 };
 		const cursor = (control?.resync ?? false) ? 0 : this.settings.notesCursor;
 
 		const token = this.settings.token;
@@ -211,6 +219,9 @@ export default class InstapaperPlugin extends Plugin {
 			result.notes = count;
 			if (control?.saveCursor ?? true) {
 				await this.saveSettings({ notesCursor: newCursor });
+			}
+			if (options?.updateHighlightTemplate || ((options?.syncHighlights ?? true) && result.notes > 0)) {
+				await this.saveSettings({ appliedHighlightTemplate: this.settings.highlightTemplate });
 			}
 		} catch (e) {
 			this.log('sync failure:', e);

@@ -45,6 +45,29 @@ You can customize which article properties are included in your synced notes. In
 
 Properties are only added to notes when they have values available from Instapaper.
 
+### Notes Template
+
+You can customize how highlights appear in your notes using a [Mustache](https://mustache.github.io/) template. In the plugin settings under **Notes → Template**, you can use the following variables:
+
+- `{{text}}` - The highlight text
+- `{{link}}` - Link to the highlight on Instapaper
+- `{{blockId}}` - Block identifier for linking to this highlight
+- `{{note}}` - Your personal note for this highlight
+
+You can also use conditional sections to show content only when a value exists:
+
+- `{{#note}}...{{/note}}` - Only displayed if you have a note for this highlight
+
+**Default template:**
+
+```mustache
+> {{text}} {{blockId}}
+{{#note}}
+
+{{note}}
+{{/note}}
+```
+
 ## Feedback
 
 Please send general feedback to: <support@help.instapaper.com>
