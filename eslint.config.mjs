@@ -7,8 +7,5 @@ export default tseslint.config(
     eslint.configs.recommended,
     tseslint.configs.recommended,
     {
-        ignores: ["main.js"],
-        rules: {
-            "@typescript-eslint/ban-ts-comment": "off",
-        },
+        ignores: ["main.js"]
     });
