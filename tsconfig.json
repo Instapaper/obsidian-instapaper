@@ -6,7 +6,6 @@
     "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "bundler",
-    "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
     "lib": [
