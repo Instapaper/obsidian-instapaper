@@ -30,7 +30,6 @@
 	},
 	"dependencies": {
 		"hmacsha1": "^1.0.0",
-		"merge-options": "^3.0.4",
 		"mustache": "^4.2.0",
 		"oauth-1.0a": "^2.2.6"
 	}

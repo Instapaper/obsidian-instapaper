@@ -2,7 +2,6 @@ import { Keymap, Notice, Plugin, TFolder } from 'obsidian';
 import { InstapaperAccount, InstapaperAPI } from './api'
 import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab, LEGACY_HIGHLIGHT_TEMPLATE } from './settings'
 import { syncNotes, type SyncNotesOptions } from './notes';
-import mergeOptions from 'merge-options';
 
 type SyncResult = {
 	notes: number;
@@ -144,7 +143,16 @@ export default class InstapaperPlugin extends Plugin {
 			needsSave = true;
 		}
 
-		this.settings = mergeOptions(DEFAULT_SETTINGS, data ?? {});
+		// Merge our defaults with the user's saved data. This needs to be a
+		// deep merge, so we need a spread for each level of object nesting.
+		this.settings = {
+			...DEFAULT_SETTINGS,
+			...data,
+			frontmatter: {
+				...DEFAULT_SETTINGS.frontmatter,
+				...data?.frontmatter,
+			},
+		};
 		if (needsSave) {
 			await this.saveSettings();
 		}

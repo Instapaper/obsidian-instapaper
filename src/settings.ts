@@ -46,6 +46,7 @@ export interface InstapaperPluginSettings {
     appliedHighlightTemplate?: string;
 }
 
+// Note! This needs to be kept in sync with the deep merge in loadSettings().
 export const DEFAULT_SETTINGS = {
     syncFrequency: 0,
     syncOnStart: true,
