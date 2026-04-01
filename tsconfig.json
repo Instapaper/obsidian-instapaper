@@ -12,7 +12,7 @@
     "strictNullChecks": true,
     "lib": [
       "DOM",
-      "ES2018"
+      "ES2022"
     ]
   },
   "include": [
