@@ -8,8 +8,8 @@ type SyncResult = {
 }
 
 export default class InstapaperPlugin extends Plugin {
-	settings: InstapaperPluginSettings;
-	api: InstapaperAPI;
+	settings!: InstapaperPluginSettings;
+	api!: InstapaperAPI;
 	syncInterval?: number;
 	syncInProgress = false;
 

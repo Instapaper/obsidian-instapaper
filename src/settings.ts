@@ -407,8 +407,8 @@ export class InstapaperSettingTab extends PluginSettingTab {
 }
 
 class ConnectAccountModal extends Modal {
-    username: string
-    password: string
+    username!: string
+    password!: string
     onConnect: (username: string, password: string) => Promise<void>;
 
     constructor(app: App, onConnect: (username: string, password: string) => Promise<void>) {
