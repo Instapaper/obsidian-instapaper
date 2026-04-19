@@ -17,6 +17,7 @@ export default class InstapaperPlugin extends Plugin {
 		this.api = new InstapaperAPI(
 			process.env.INSTAPAPER_CONSUMER_KEY as string,
 			process.env.INSTAPAPER_CONSUMER_SECRET as string,
+			process.env.INSTAPAPER_BASE_URL ? { baseURL: process.env.INSTAPAPER_BASE_URL } : undefined,
 		);
 
 		await this.loadSettings();
