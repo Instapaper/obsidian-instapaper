@@ -188,17 +188,32 @@ export class InstapaperSettingTab extends PluginSettingTab {
                 .setName('Notes folder')
                 .setDesc('The folder in which your notes and highlights will be synced.')
                 .addText((text) => {
-                    text.setValue(this.plugin.settings.notesFolder)
-                    text.onChange(async (value) => {
-                        const previousPath = this.plugin.settings.notesFolder;
-                        const newPath = normalizePath(value);
-                        await this.plugin.saveSettings({ notesFolder: newPath });
+                    text.setValue(this.plugin.settings.notesFolder);
 
-                        const previousFile = this.app.vault.getAbstractFileByPath(previousPath);
-                        if (previousFile instanceof TFolder) {
-                            await previousFile.vault.rename(previousFile, newPath);
+                    const commit = async () => {
+                        const previousPath = this.plugin.settings.notesFolder;
+                        const newPath = normalizePath(text.getValue());
+                        if (newPath === previousPath) return;
+
+                        try {
+                            const previousFile = this.app.vault.getAbstractFileByPath(previousPath);
+                            if (previousFile instanceof TFolder) {
+                                // The vault rename event will save the new path.
+                                await this.app.fileManager.renameFile(previousFile, newPath);
+                            } else {
+                                await this.plugin.saveSettings({ notesFolder: newPath });
+                            }
+                        } catch (e) {
+                            this.plugin.log('Failed to rename notes folder:', e);
+                            this.plugin.notice('Failed to rename notes folder');
+                            text.setValue(this.plugin.settings.notesFolder);
                         }
-                    })
+                    };
+
+                    text.inputEl.addEventListener('change', commit);
+                    text.inputEl.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') text.inputEl.blur();
+                    });
                 });
         });
 

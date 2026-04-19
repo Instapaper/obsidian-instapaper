@@ -68,6 +68,14 @@ export default class InstapaperPlugin extends Plugin {
 		);
 
 		this.registerEvent(
+			this.app.vault.on('rename', async (file, oldPath) => {
+				if (file instanceof TFolder && oldPath === this.settings.notesFolder) {
+					await this.saveSettings({ notesFolder: file.path });
+				}
+			})
+		);
+
+		this.registerEvent(
 			this.app.workspace.on('file-menu', (menu, file) => {
 				if (!(file instanceof TFolder && file.path == this.settings.notesFolder)) {
 					return;
