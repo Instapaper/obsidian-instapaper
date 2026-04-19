@@ -1,137 +1,155 @@
-import OAuth from "oauth-1.0a";
-import hmacsha1 from "hmacsha1";
 import { requestUrl } from "obsidian";
 
 export interface InstapaperClientOptions {
     baseURL: string;
+    oauthRedirectURI: string;
 }
 
 const DEFAULT_OPTIONS: InstapaperClientOptions = {
-    baseURL: 'https://www.instapaper.com/api'
+    baseURL: 'https://www.instapaper.com',
+    oauthRedirectURI: 'obsidian://instapaper-auth',
 }
 
-// Like OAuth.Token but distinct so it can be used as a stable Settings type.
 export type InstapaperAccessToken = {
     key: string;
-    secret: string;
+    secret?: string; // unused, retained for downgrade safety
 }
 
 export type InstapaperAccount = {
-    type: "user";
-    user_id: number;
+    id: number;
     username: string;
 }
 
 export type InstapaperBookmark = {
-    type: "bookmark";
-    author: string;
-    bookmark_id: number;
-    description: string;
-    hash: string;
-    private_source: string;
-    progress: number;
-    progress_timestamp: number;
-    pubtime: number;
-    starred: "0" | "1";
-    tags: InstapaperTag[];
+    id: number;
+    url: string | null;
+    title: string | null;
+    description: string | null;
+    image: string | null;
+    progress: {
+        percentage: number;
+        timestamp: number;
+    };
+    liked: boolean;
+    archived: boolean;
     time: number;
-    title: string;
-    url: string;
-    words: number;
+    tags: InstapaperTag[];
+    private_source: string | null;
+    author: string | null;
+    pubtime: number | null;
 }
 
 export type InstapaperTag = {
-    count: number;
-    hash: string;
     id: number;
     name: string;
     slug: string;
-    time: number;
+    count: number;
+    baton: string | null;
 }
 
 export type InstapaperHighlight = {
-    highlight_id: number;
-    article_id: string;
-    time: number;
+    id: number;
+    bookmark_id: number;
     text: string;
     note: string | null;
+    position: number;
+    time: number;
 }
 
 export class InstapaperAPI {
-    oauth: OAuth
+    private consumerKey: string;
+    private consumerSecret: string;
     options: InstapaperClientOptions;
 
-    constructor(consumerKey: string, consumerSecret: string, options?: InstapaperClientOptions) {
-        this.oauth = new OAuth({
-            consumer: {
-                key: consumerKey,
-                secret: consumerSecret,
-            },
-            signature_method: "HMAC-SHA1",
-            hash_function(base_string: string, key: string) {
-                return hmacsha1(key, base_string);
-            },
-            parameter_seperator: ", "
-        });
+    constructor(consumerKey: string, consumerSecret: string, options?: Partial<InstapaperClientOptions>) {
+        this.consumerKey = consumerKey;
+        this.consumerSecret = consumerSecret;
         this.options = Object.assign({}, DEFAULT_OPTIONS, options);
     }
 
-    private async fetch(request: OAuth.RequestOptions, token?: OAuth.Token) {
-        const authorization = this.oauth.authorize(request, token);
-
-        let url = request.url;
+    private async fetch(
+        url: string,
+        method: string,
+        token: InstapaperAccessToken,
+        data?: Record<string, unknown>,
+        options?: { json?: boolean },
+    ) {
+        let requestURL = url;
         let body: string | undefined;
         let contentType: string | undefined;
 
-        if (request.data) {
-            if (request.method == 'GET') {
-                url += '?' + new URLSearchParams(request.data).toString();
+        if (data) {
+            if (method === 'GET') {
+                const params = new URLSearchParams();
+                for (const [k, v] of Object.entries(data)) {
+                    if (v != null) params.set(k, String(v));
+                }
+                requestURL += '?' + params.toString();
+            } else if (options?.json) {
+                body = JSON.stringify(data);
+                contentType = "application/json";
             } else {
-                body = new URLSearchParams(request.data).toString();
+                body = new URLSearchParams(data as Record<string, string>).toString();
                 contentType = "application/x-www-form-urlencoded";
             }
         }
 
-        return await requestUrl({
-            url: url,
-            method: request.method,
-            contentType: contentType,
-            body: body,
-            headers: { ...this.oauth.toHeader(authorization) },
-            throw: true,
-        });
+        try {
+            return await requestUrl({
+                url: requestURL,
+                method: method,
+                contentType: contentType,
+                body: body,
+                headers: {
+                    'Authorization': `Bearer ${token.key}`,
+                },
+                throw: true,
+            });
+        } catch (e) {
+            throw new Error(`${method} ${requestURL}: ${e}`, { cause: e });
+        }
     }
 
-    async getAccessToken(username: string, password: string): Promise<InstapaperAccessToken> {
-        const response = await this.fetch(
-            {
-                url: `${this.options.baseURL}/1.1/oauth/access_token`,
-                method: 'POST',
-                data: {
-                    x_auth_username: username,
-                    x_auth_password: password,
-                    x_auth_mode: "client_auth",
-                },
-            }
-        )
+    getAuthorizeURL(): string {
+        const params = new URLSearchParams({
+            client_id: this.consumerKey,
+            redirect_uri: this.options.oauthRedirectURI,
+            response_type: 'code',
+        });
+        return `${this.options.baseURL}/oauth2/authorize?${params.toString()}`;
+    }
 
-        const params = new URLSearchParams(response.text);
-        const key = params.get("oauth_token") || "";
-        const secret = params.get("oauth_token_secret") || "";
-        return { key, secret }
+    async exchangeCode(
+        code: string,
+    ): Promise<{ token: InstapaperAccessToken; account: InstapaperAccount }> {
+        const response = await requestUrl({
+            url: `${this.options.baseURL}/oauth2/token`,
+            method: 'POST',
+            contentType: 'application/x-www-form-urlencoded',
+            body: new URLSearchParams({
+                client_id: this.consumerKey,
+                redirect_uri: this.options.oauthRedirectURI,
+                client_secret: this.consumerSecret,
+                code: code,
+            }).toString(),
+            throw: true,
+        });
+
+        const data = await response.json;
+        return {
+            token: { key: data.access_token },
+            account: data.user as InstapaperAccount,
+        };
     }
 
     async verifyCredentials(token: InstapaperAccessToken): Promise<InstapaperAccount> {
         const response = await this.fetch(
-            {
-                url: `${this.options.baseURL}/1.1/account/verify_credentials`,
-                method: 'POST',
-            },
+            `${this.options.baseURL}/api/2/me`,
+            'GET',
             token,
-        )
+        );
 
-        const data = (await response.json) as [InstapaperAccount]
-        return data[0];
+        return (await response.json) as InstapaperAccount;
     }
 
     async addBookmark(
@@ -144,16 +162,14 @@ export class InstapaperAPI {
         },
     ): Promise<InstapaperBookmark> {
         const response = await this.fetch(
-            {
-                url: `${this.options.baseURL}/1.1/bookmarks/add`,
-                method: 'POST',
-                data: data,
-            },
+            `${this.options.baseURL}/api/2/bookmarks`,
+            'POST',
             token,
+            data,
+            { json: true },
         );
 
-        const bookmarks = await response.json as [InstapaperBookmark]
-        return bookmarks[0];
+        return (await response.json) as InstapaperBookmark;
     }
 
     async getHighlights(
@@ -163,29 +179,26 @@ export class InstapaperAPI {
             offset?: number,
             limit?: number,
             sort?: 'asc' | 'desc',
-
         },
     ): Promise<{
-        highlights: [InstapaperHighlight],
-        bookmarks: Record<string, InstapaperBookmark>,
+        highlights: InstapaperHighlight[],
+        bookmarks: Record<number, InstapaperBookmark>,
     }> {
         const response = await this.fetch(
-            {
-                url: `${this.options.baseURL}/highlights`,
-                method: 'GET',
-                data: data,
-            },
+            `${this.options.baseURL}/api/2/private/highlights`,
+            'GET',
             token,
-        )
+            data,
+        );
 
         const { highlights, bookmarks }: {
-            highlights: [InstapaperHighlight],
-            bookmarks: [InstapaperBookmark],
+            highlights: InstapaperHighlight[],
+            bookmarks: InstapaperBookmark[],
         } = await response.json;
 
         return {
             highlights,
-            bookmarks: Object.fromEntries(bookmarks.map(b => [b.bookmark_id, b]))
+            bookmarks: Object.fromEntries(bookmarks.map(b => [b.id, b]))
         }
     }
 }

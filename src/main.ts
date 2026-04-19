@@ -10,6 +10,7 @@ type SyncResult = {
 export default class InstapaperPlugin extends Plugin {
 	settings!: InstapaperPluginSettings;
 	api!: InstapaperAPI;
+	settingTab?: InstapaperSettingTab;
 	syncInterval?: number;
 	syncInProgress = false;
 
@@ -21,7 +22,28 @@ export default class InstapaperPlugin extends Plugin {
 		);
 
 		await this.loadSettings();
-		this.addSettingTab(new InstapaperSettingTab(this.app, this));
+
+		this.settingTab = new InstapaperSettingTab(this.app, this);
+		this.addSettingTab(this.settingTab);
+
+		this.registerObsidianProtocolHandler('instapaper-auth', async (params) => {
+			if (this.settingTab) {
+				this.settingTab.authorizing = false;
+			}
+			if (params.error) {
+				this.notice('Failed to connect Instapaper account');
+			} else if (params.code) {
+				try {
+					const account = await this.connectAccount(params.code);
+					this.notice(`Connected Instapaper account: ${account.username}`);
+				} catch (e) {
+					this.log('Failed to connect account:', e);
+					await this.disconnectAccount();
+					this.notice('Failed to connect Instapaper account');
+				}
+			}
+			this.settingTab?.display();
+		});
 
 		this.registerEvent(
 			this.app.workspace.on('url-menu', (menu, url) => {
@@ -35,7 +57,7 @@ export default class InstapaperPlugin extends Plugin {
 						.onClick(async () => {
 							try {
 								const bookmark = await this.api.addBookmark(token, { url })
-								this.notice(`Saved "${bookmark.title}" to Instapaper`);
+								this.notice(`Saved "${bookmark.title ?? url}" to Instapaper`);
 							} catch (e) {
 								this.notice(`Unable to save to Instapaper`);
 								this.log('failed to add bookmark:', e);
@@ -176,9 +198,8 @@ export default class InstapaperPlugin extends Plugin {
 
 	// ACCOUNT
 
-	async connectAccount(username: string, password: string): Promise<InstapaperAccount> {
-		const token = await this.api.getAccessToken(username, password);
-		const account = await this.api.verifyCredentials(token);
+	async connectAccount(code: string): Promise<InstapaperAccount> {
+		const { token, account } = await this.api.exchangeCode(code);
 		await this.saveSettings({
 			token: token,
 			account: account,

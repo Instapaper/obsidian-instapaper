@@ -27,8 +27,6 @@
 		"typescript-eslint": "^8.58.0"
 	},
 	"dependencies": {
-		"hmacsha1": "^1.0.0",
-		"mustache": "^4.2.0",
-		"oauth-1.0a": "^2.2.6"
+		"mustache": "^4.2.0"
 	}
 }
