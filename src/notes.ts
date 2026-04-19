@@ -80,7 +80,7 @@ export async function syncNotes(
 
     while (true) {
         let highlights: InstapaperHighlight[];
-        let bookmarks: Record<string, InstapaperBookmark>;
+        let bookmarks: Record<number, InstapaperBookmark>;
 
         try {
             ({ highlights, bookmarks } = await plugin.api.getHighlights(token, {
@@ -100,9 +100,9 @@ export async function syncNotes(
         if (highlights.length === 0) break;
 
         for (const highlight of highlights) {
-            cursor = highlight.highlight_id;
+            cursor = highlight.id;
 
-            const article = bookmarks[highlight.article_id];
+            const article = bookmarks[highlight.bookmark_id];
             if (!article) continue;
 
             // Resolve a TFile for this article. This will be an existing file,
@@ -164,9 +164,9 @@ async function fileForArticle(
     create: boolean = true
 ): Promise<TFile | null> {
     // Use a sanitized version of the article's title for our filename.
-    let name = article.title.replace(/[\\/:<>?|*"]/gm, '').substring(0, 250).trim();
+    let name = (article.title ?? '').replace(/[\\/:<>?|*"]/gm, '').substring(0, 250).trim();
     if (!name) {
-        name = `Untitled-${article.bookmark_id}`;
+        name = `Untitled-${article.id}`;
     }
 
     const path = normalizePath(`${folder}/${name}.md`);
@@ -176,12 +176,12 @@ async function fileForArticle(
 }
 
 function linkForHighlight(highlight: InstapaperHighlight): string {
-    return `https://www.instapaper.com/read/${highlight.article_id}/${highlight.highlight_id}`
+    return `https://www.instapaper.com/read/${highlight.bookmark_id}/${highlight.id}`
 }
 
 // https://help.obsidian.md/links#Link+to+a+block+in+a+note
 function blockIdentifierForHighlight(highlight: InstapaperHighlight): string {
-    return `^h${highlight.highlight_id}`;
+    return `^h${highlight.id}`;
 }
 
 function hasHighlightMarker(content: string, highlight: InstapaperHighlight): boolean {

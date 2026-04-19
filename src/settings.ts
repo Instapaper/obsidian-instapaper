@@ -1,4 +1,4 @@
-import { App, ButtonComponent, Modal, PluginSettingTab, Setting, SettingGroup, TextAreaComponent, TextComponent, TFolder, normalizePath } from "obsidian";
+import { App, ButtonComponent, PluginSettingTab, Setting, SettingGroup, TextAreaComponent, TextComponent, TFolder, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount } from "./api";
 
@@ -66,6 +66,7 @@ export const DEFAULT_SETTINGS = {
 
 export class InstapaperSettingTab extends PluginSettingTab {
     plugin: InstapaperPlugin;
+    authorizing = false;
 
     constructor(app: App, plugin: InstapaperPlugin) {
         super(app, plugin);
@@ -102,6 +103,16 @@ export class InstapaperSettingTab extends PluginSettingTab {
                         this.display();
                     })
                 });
+        } else if (this.authorizing) {
+            setting
+                .setDesc('Waiting for authorization in your browser…')
+                .addButton((button) => {
+                    button.setButtonText('Cancel');
+                    button.onClick(() => {
+                        this.authorizing = false;
+                        this.display();
+                    });
+                });
         } else {
             setting
                 .setDesc('Connect your Instapaper account')
@@ -109,18 +120,10 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     button.setButtonText('Connect');
                     button.setTooltip('Connect your Instapaper account')
                     button.setCta();
-                    button.onClick(async () => {
-                        new ConnectAccountModal(this.app, async (username: string, password: string) => {
-                            try {
-                                const account = await this.plugin.connectAccount(username, password);
-                                this.plugin.notice(`Connected Instapaper account: ${account.username}`);
-                            } catch (e) {
-                                console.log('Failed to connect account:', e);
-                                await this.plugin.disconnectAccount();
-                                this.plugin.notice('Failed to connect Instapaper account');
-                            }
-                            this.display();
-                        }).open();
+                    button.onClick(() => {
+                        this.authorizing = true;
+                        this.display();
+                        window.open(this.plugin.api.getAuthorizeURL());
                     })
                 });
         }
@@ -420,90 +423,5 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     });
             });
         });
-    }
-}
-
-class ConnectAccountModal extends Modal {
-    username!: string
-    password!: string
-    onConnect: (username: string, password: string) => Promise<void>;
-
-    constructor(app: App, onConnect: (username: string, password: string) => Promise<void>) {
-        super(app);
-        this.onConnect = onConnect;
-    }
-
-    onOpen() {
-        const group = new SettingGroup(this.contentEl)
-            .setHeading('Instapaper account')
-            .addClass('instapaper-connect-account');
-
-        let usernameEl: HTMLInputElement;
-        let passwordEl: HTMLInputElement;
-        let connectButton: ButtonComponent;
-
-        const updateConnectButton = () => {
-            const valid = usernameEl.checkValidity() && passwordEl.checkValidity();
-            connectButton.setDisabled(!valid);
-        };
-
-        group.addSetting((setting) => {
-            setting
-                .setName("Email")
-                .addText((text) => {
-                    text.inputEl.addEventListener('blur', () => {
-                        text.inputEl.required = true;
-                    });
-                    text.onChange((value) => {
-                        this.username = value;
-                        updateConnectButton();
-                    });
-                    usernameEl = text.inputEl;
-                });
-        });
-
-        group.addSetting((setting) => {
-            setting
-                .setName("Password")
-                .addText((text) => {
-                    text.inputEl.type = "password";
-                    text.onChange((value) => {
-                        this.password = value;
-                        updateConnectButton();
-                    });
-                    passwordEl = text.inputEl;
-                });
-        });
-
-        group.addSetting((setting) => {
-            const descEl = setting.descEl;
-            descEl.createSpan({ text: "If you don't have an account, you can " });
-            descEl.createEl('a', {
-                text: 'create one',
-                href: 'https://www.instapaper.com/user/register',
-            });
-            descEl.createSpan({ text: ' on the Instapaper website.' });
-        });
-
-        const footer = this.modalEl.createDiv({ cls: 'modal-button-container' });
-
-        new Setting(footer)
-            .addButton((button) => {
-                button.setCta();
-                button.setButtonText("Connect");
-                button.setDisabled(true);
-                button.onClick(async () => {
-                    button.setButtonText("Connecting ...");
-                    button.setDisabled(true);
-                    await this.onConnect(this.username, this.password);
-                    this.close();
-                });
-                connectButton = button;
-            });
-    }
-
-    onClose() {
-        const { contentEl } = this;
-        contentEl.empty();
     }
 }
