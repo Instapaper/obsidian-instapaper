@@ -263,7 +263,7 @@ export default class InstapaperPlugin extends Plugin {
 		this.registerInterval(this.syncInterval);
 	}
 
-	private reportSyncResult(result: SyncResult) {
+	reportSyncResult(result: SyncResult) {
 		const total = Object.values(result).reduce((a, b) => a + b);
 		switch (total) {
 			case 0:

@@ -144,6 +144,23 @@ export class InstapaperSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings({ syncFrequency: parseInt(value) });
                         await this.plugin.updateSyncInterval();
                     });
+                })
+                .addButton((button) => {
+                    button
+                        .setIcon('refresh-cw')
+                        .setTooltip('Sync now')
+                        .onClick(async () => {
+                            button.setDisabled(true);
+                            try {
+                                const result = await this.plugin.runSync('settings');
+                                this.plugin.reportSyncResult(result);
+                            } catch (e) {
+                                this.plugin.log('Sync failed:', e);
+                                this.plugin.notice('Failed to sync with Instapaper');
+                            } finally {
+                                button.setDisabled(false);
+                            }
+                        });
                 });
         });
 
