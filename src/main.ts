@@ -27,12 +27,16 @@ export default class InstapaperPlugin extends Plugin {
 		this.addSettingTab(this.settingTab);
 
 		this.registerObsidianProtocolHandler('instapaper-auth', async (params) => {
-			if (this.settingTab) {
-				this.settingTab.authorizing = false;
-			}
 			if (params.error) {
+				if (this.settingTab) {
+					this.settingTab.authState = 'idle';
+				}
 				this.notice('Failed to connect Instapaper account');
 			} else if (params.code) {
+				if (this.settingTab) {
+					this.settingTab.authState = 'exchange';
+					this.settingTab.display();
+				}
 				try {
 					const account = await this.connectAccount(params.code);
 					this.notice(`Connected Instapaper account: ${account.username}`);
@@ -42,7 +46,10 @@ export default class InstapaperPlugin extends Plugin {
 					this.notice('Failed to connect Instapaper account');
 				}
 			}
-			this.settingTab?.display();
+			if (this.settingTab) {
+				this.settingTab.authState = 'idle';
+				this.settingTab.display();
+			}
 		});
 
 		this.registerEvent(

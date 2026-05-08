@@ -66,7 +66,7 @@ export const DEFAULT_SETTINGS = {
 
 export class InstapaperSettingTab extends PluginSettingTab {
     plugin: InstapaperPlugin;
-    authorizing = false;
+    authState: 'idle' | 'browser' | 'exchange' = 'idle';
 
     constructor(app: App, plugin: InstapaperPlugin) {
         super(app, plugin);
@@ -103,13 +103,15 @@ export class InstapaperSettingTab extends PluginSettingTab {
                         this.display();
                     })
                 });
-        } else if (this.authorizing) {
+        } else if (this.authState === 'exchange') {
+            setting.setDesc('Connecting your account…');
+        } else if (this.authState === 'browser') {
             setting
                 .setDesc('Waiting for authorization in your browser…')
                 .addButton((button) => {
                     button.setButtonText('Cancel');
                     button.onClick(() => {
-                        this.authorizing = false;
+                        this.authState = 'idle';
                         this.display();
                     });
                 });
@@ -121,7 +123,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     button.setTooltip('Connect your Instapaper account')
                     button.setCta();
                     button.onClick(() => {
-                        this.authorizing = true;
+                        this.authState = 'browser';
                         this.display();
 
                         // On Desktop, always bypass Obsidian's Web Viewer plugin
