@@ -1,4 +1,4 @@
-import { App, ButtonComponent, PluginSettingTab, Setting, SettingGroup, TextAreaComponent, TextComponent, TFolder, normalizePath } from "obsidian";
+import { App, ButtonComponent, Platform, PluginSettingTab, Setting, SettingGroup, TextAreaComponent, TextComponent, TFolder, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount } from "./api";
 
@@ -123,7 +123,15 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     button.onClick(() => {
                         this.authorizing = true;
                         this.display();
-                        window.open(this.plugin.api.getAuthorizeURL());
+
+                        // On Desktop, always bypass Obsidian's Web Viewer plugin
+                        // interception, which can't handle obsidian:// direct URLs.
+                        const url = this.plugin.api.getAuthorizeURL();
+                        if (Platform.isDesktopApp) {
+                            window.require?.('electron').shell.openExternal(url).catch(() => window.open(url));
+                        } else {
+                            window.open(url);
+                        }
                     })
                 });
         }
