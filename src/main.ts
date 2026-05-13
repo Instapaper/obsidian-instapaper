@@ -158,27 +158,37 @@ export default class InstapaperPlugin extends Plugin {
 	// SETTINGS
 
 	async loadSettings() {
-		const data = await this.loadData();
+		// Properties from older versions of the plugin that may still be
+		// present in saved user data and require migration.
+		type LegacySettings = {
+			notesFrequency?: number;
+			notesSyncOnStart?: boolean;
+		};
 
-		// Migrate pre-0.7.0 settings
+		const data = await this.loadData() as
+			(Partial<InstapaperPluginSettings> & LegacySettings) | null;
+
 		let needsSave = false;
-		if (data && Object.hasOwnProperty.call(data, 'notesFrequency')) {
-			data['syncFrequency'] = data['notesFrequency'];
-			delete data['notesFrequency'];
-			needsSave = true;
-		}
-		if (data && Object.hasOwnProperty.call(data, 'notesSyncOnStart')) {
-			data['syncOnStart'] = data['notesSyncOnStart'];
-			delete data['notesSyncOnStart'];
-			needsSave = true;
-		}
+		if (data) {
+			// Migrate pre-0.7.0 settings
+			if (Object.hasOwnProperty.call(data, 'notesFrequency')) {
+				data.syncFrequency = data.notesFrequency;
+				delete data.notesFrequency;
+				needsSave = true;
+			}
+			if (Object.hasOwnProperty.call(data, 'notesSyncOnStart')) {
+				data.syncOnStart = data.notesSyncOnStart;
+				delete data.notesSyncOnStart;
+				needsSave = true;
+			}
 
-		// Seed highlightTemplate for users upgrading from before template
-		// customization was introduced. Existing notes were written with
-		// the legacy format.
-		if (data && !Object.hasOwnProperty.call(data, 'appliedHighlightTemplate')) {
-			data['highlightTemplate'] = LEGACY_HIGHLIGHT_TEMPLATE;
-			needsSave = true;
+			// Seed highlightTemplate for users upgrading from before template
+			// customization was introduced. Existing notes were written with
+			// the legacy format.
+			if (!Object.hasOwnProperty.call(data, 'appliedHighlightTemplate')) {
+				data.highlightTemplate = LEGACY_HIGHLIGHT_TEMPLATE;
+				needsSave = true;
+			}
 		}
 
 		// Merge our defaults with the user's saved data. This needs to be a
@@ -195,7 +205,7 @@ export default class InstapaperPlugin extends Plugin {
 			await this.saveSettings();
 		}
 
-		await this.updateSyncInterval();
+		this.updateSyncInterval();
 	}
 
 	async saveSettings(updates?: Partial<InstapaperPluginSettings>) {
@@ -220,7 +230,7 @@ export default class InstapaperPlugin extends Plugin {
 			account: account,
 		});
 
-		await this.updateSyncInterval();
+		this.updateSyncInterval();
 		if (this.settings.syncOnStart) {
 			await this.runSync('on connect');
 		}
@@ -282,7 +292,7 @@ export default class InstapaperPlugin extends Plugin {
 		this.syncInterval = undefined;
 	}
 
-	async updateSyncInterval() {
+	updateSyncInterval() {
 		this.log('setting sync frequency to',
 			this.settings.syncFrequency,
 			this.settings.syncFrequency ? 'minutes' : '(manual)'
@@ -294,7 +304,7 @@ export default class InstapaperPlugin extends Plugin {
 		if (!timeout) return; // manual
 
 		this.syncInterval = window.setInterval(() => {
-			this.runSync('scheduled')
+			void this.runSync('scheduled')
 		}, timeout);
 		this.registerInterval(this.syncInterval);
 	}

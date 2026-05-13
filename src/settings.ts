@@ -155,7 +155,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     dropdown.setValue(Number(this.plugin.settings.syncFrequency).toString());
                     dropdown.onChange(async (value) => {
                         await this.plugin.saveSettings({ syncFrequency: parseInt(value) });
-                        await this.plugin.updateSyncInterval();
+                        this.plugin.updateSyncInterval();
                     });
                 })
                 .addButton((button) => {
@@ -220,7 +220,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                         }
                     };
 
-                    text.inputEl.addEventListener('change', commit);
+                    text.inputEl.addEventListener('change', () => { void commit(); });
                     text.inputEl.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter') text.inputEl.blur();
                     });
@@ -252,12 +252,15 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     text: 'Reset to default',
                     href: '#'
                 });
-                resetLink.addEventListener('click', async (e) => {
+                resetLink.addEventListener('click', (e) => {
                     e.preventDefault();
                     textareaComponent.setValue(DEFAULT_HIGHLIGHT_TEMPLATE);
                     updateButton?.setDisabled(templateIsApplied(DEFAULT_HIGHLIGHT_TEMPLATE));
-                    await this.plugin.saveSettings({
+                    this.plugin.saveSettings({
                         highlightTemplate: DEFAULT_HIGHLIGHT_TEMPLATE
+                    }).catch(e => {
+                        this.plugin.log('Failed to save template:', e);
+                        this.plugin.notice('Failed to save template');
                     });
                 });
                 el.appendText(' · ');
