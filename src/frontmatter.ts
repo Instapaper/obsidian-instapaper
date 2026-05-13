@@ -1,6 +1,6 @@
 import { TFile, FileManager, moment } from "obsidian";
 import type { InstapaperBookmark, InstapaperTag } from "./api";
-import type { FrontmatterSettings } from "./settings";
+import type { FrontmatterField, FrontmatterSettings } from "./settings";
 import { DEFAULT_SETTINGS } from "./settings";
 
 /**
@@ -30,7 +30,7 @@ export async function applyArticleFrontmatter(
 ): Promise<void> {
     // Property order is preserved for existing files while new files
     // will have properties added in the order below.
-    await fileManager.processFrontMatter(file, (frontmatter) => {
+    await fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
         if (settings.title.enabled && settings.title.propertyName) {
             if (article.title) {
                 frontmatter[settings.title.propertyName] = article.title;
@@ -84,8 +84,8 @@ export async function applyArticleFrontmatter(
         }
 
         if (options?.removeDisabled) {
-            const settingsFields = Object.values(settings);
-            const defaultFields = Object.values(DEFAULT_SETTINGS.frontmatter);
+            const settingsFields = Object.values(settings) as FrontmatterField[];
+            const defaultFields = Object.values(DEFAULT_SETTINGS.frontmatter) as FrontmatterField[];
 
             // Enabled properties (in settings)
             const enabledNames = new Set(

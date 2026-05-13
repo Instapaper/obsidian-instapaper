@@ -5,7 +5,7 @@ import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight } f
 import { applyArticleFrontmatter } from "./frontmatter";
 
 // Disable HTML escaping. We render to Markdown.
-Mustache.escape = (text) => text;
+Mustache.escape = (text: string) => text;
 
 export interface SyncNotesOptions {
     /**
