@@ -14,8 +14,6 @@ Contributions are welcome! This guide attempts to answer common question about h
 
 You might also want to install the [Hot-Reload](https://github.com/pjeby/hot-reload) plugin to automatically reload the code during development.
 
-You can also use the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat) to install and test development versions directly from this GitHub repository without cloning and compiling locally.
-
 ### Manual Installation
 
 If you need to manually install a copy of this plugin, copy the `main.js`, `manifest.json`, and `styles.css` files to your vault (e.g. `<Vault>/.obsidian/plugins/obsidian-instapaper/`).
@@ -41,18 +39,11 @@ npm run lint
 
 ## Releases
 
-1. Run `npm version patch`, `npm version minor` or `npm version major` to automatically `package.json`, `manifest.json`, and `versions.json`.
-2. Create a new GitHub release using the new version as the "Tag version" (exactly, without a `v` prefix).
-3. Upload the files `manifest.json`, `main.js`, and `styles.css` as binary attachments. Note: The `manifest.json` file must be in two places: the root path of the repository and also in the release.
-4. Publish the release.
+1. Run `npm version patch`, `npm version minor`, or `npm version major` to bump `package.json`, `manifest.json`, and `versions.json` and create a version commit and tag.
+2. Push the commit and the new tag (e.g. `git push origin main --follow-tags`). Pushing a `MAJOR.MINOR.PATCH` tag triggers the [release workflow](.github/workflows/release.yaml), which builds the plugin, attests build provenance, and creates a draft GitHub release with `main.js`, `manifest.json`, and `styles.css` attached.
+3. Edit the draft release on GitHub to add release notes, then publish it.
 
 Also make sure that `minAppVersion` in `manifest.json` always reflects the minimum required Obsidian version expected by the plugin code.
-
-## Beta Releases
-
-From time to time, we may release "beta" or "preview" versions. These are GitHub releases that aren't published to `main` (which would make them available to add Obsidian users).
-
-To test one of these versions, you can use the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat).
 
 ## License
 
