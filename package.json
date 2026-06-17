@@ -26,7 +26,7 @@
 		"eslint-plugin-security": "4.0.0",
 		"obsidian": "1.11.0",
 		"typescript": "6.0.3",
-		"typescript-eslint": "8.60.0"
+		"typescript-eslint": "8.61.1"
 	},
 	"dependencies": {
 		"mustache": "4.2.0"
