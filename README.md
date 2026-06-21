@@ -43,6 +43,11 @@ You can customize which article properties are included in your synced notes. In
 - **Tags**: Tags from Instapaper (default: `tags`)
 - **Source**: A static string value (default: `instapaper`, _disabled_)
 
+For the **URL** property, you can choose the URL format from a dropdown directly below the URL setting:
+
+- **Instapaper app** (default): `instapaper-private://x-callback-url/open?bookmark_id={id}`
+- **Web**: `https://instapaper.com/read/{id}`
+
 Properties are only added to notes when they have values available from Instapaper.
 
 ### Notes Template
