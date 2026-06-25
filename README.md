@@ -45,6 +45,8 @@ You can customize which article properties are included in your synced notes. In
 
 Properties are only added to notes when they have values available from Instapaper.
 
+When creating new notes, the plugin removes emoji characters from article titles before generating the note filename. Existing notes keep their current names.
+
 ### Notes Template
 
 You can customize how highlights appear in your notes using a [Mustache](https://mustache.github.io/) template. In the plugin settings under **Notes → Template**, you can use the following variables:
