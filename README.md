@@ -35,6 +35,7 @@ Each synced highlight includes a [block identifier](https://help.obsidian.md/Lin
 
 You can customize which article properties are included in your synced notes. In the plugin settings under **Article properties**, you can set and rename any of these properties:
 
+- **Article ID**: The Instapaper article ID used to keep notes linked across rename and move (default: `instapaperId`)
 - **Title**: The article's title (default: `title`, _disabled_)
 - **Author**: The article's author (default: `author`)
 - **URL**: The article's URL (default: `url`)
@@ -44,6 +45,8 @@ You can customize which article properties are included in your synced notes. In
 - **Source**: A static string value (default: `instapaper`, _disabled_)
 
 Properties are only added to notes when they have values available from Instapaper.
+
+The plugin also keeps an internal index of imported article IDs. This allows synced notes to keep their identity after you rename or move them, and prevents deleted synced notes from being recreated automatically on the next sync.
 
 ### Notes Template
 

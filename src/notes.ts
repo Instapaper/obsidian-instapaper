@@ -2,7 +2,8 @@ import { TFile, Vault, normalizePath } from "obsidian";
 import Mustache from "mustache";
 import type InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight } from "./api";
-import { applyArticleFrontmatter } from "./frontmatter";
+import { applyArticleFrontmatter, getArticleIdPropertyNames } from "./frontmatter";
+import { getImportedArticle, markImportedArticleDeleted, setImportedArticlePath } from "./note-index";
 
 // Disable HTML escaping. We render to Markdown.
 Mustache.escape = (text: string) => text;
@@ -54,6 +55,7 @@ export async function syncNotes(
 ): Promise<{
     cursor: number;
     count: number;
+    indexChanged: boolean;
 }> {
     const opts = {
         createFiles: true,
@@ -69,7 +71,7 @@ export async function syncNotes(
     const folder = normalizePath(plugin.settings.notesFolder);
     if (!await vault.adapter.exists(folder)) {
         if (!opts.createFiles) {
-            return { cursor, count: 0 };
+            return { cursor, count: 0, indexChanged: false };
         }
         await vault.createFolder(folder);
         cursor = 0;
@@ -77,6 +79,7 @@ export async function syncNotes(
 
     let count = 0;
     let errors = 0;
+    let indexChanged = false;
 
     while (true) {
         let highlights: InstapaperHighlight[];
@@ -110,7 +113,9 @@ export async function syncNotes(
             // exist and wasn't created (in which case we skip this article).
             let file: TFile | null;
             try {
-                file = await fileForArticle(article, vault, folder, opts.createFiles);
+                const resolution = await fileForArticle(plugin, article, vault, folder, opts.createFiles);
+                file = resolution.file;
+                indexChanged = indexChanged || resolution.indexChanged;
                 if (!file) continue;
             } catch (e) {
                 plugin.log(`fileForArticle("${article.title}"):`, e);
@@ -126,6 +131,12 @@ export async function syncNotes(
                     fileManager,
                     { removeDisabled: opts.removeDisabledProperties }
                 );
+            }
+
+            const nextIndex = setImportedArticlePath(plugin.settings.importedArticles, article.id, file.path);
+            if (nextIndex !== plugin.settings.importedArticles) {
+                plugin.settings.importedArticles = nextIndex;
+                indexChanged = true;
             }
 
             // Update existing highlights if a template replacement is requested.
@@ -154,15 +165,51 @@ export async function syncNotes(
         }
     }
 
-    return { cursor, count };
+    return { cursor, count, indexChanged };
 }
 
 async function fileForArticle(
+    plugin: InstapaperPlugin,
     article: InstapaperBookmark,
     vault: Vault,
     folder: string,
     create: boolean = true
-): Promise<TFile | null> {
+): Promise<{ file: TFile | null; indexChanged: boolean }> {
+    const indexed = getImportedArticle(plugin.settings.importedArticles, article.id);
+    if (indexed?.deleted) {
+        return { file: null, indexChanged: false };
+    }
+
+    if (indexed?.path) {
+        const indexedFile = vault.getFileByPath(indexed.path);
+        if (indexedFile) {
+            return { file: indexedFile, indexChanged: false };
+        }
+
+        const recoveredFile = findFileByArticleId(plugin, article.id);
+        if (recoveredFile) {
+            plugin.settings.importedArticles = setImportedArticlePath(
+                plugin.settings.importedArticles,
+                article.id,
+                recoveredFile.path,
+            );
+            return { file: recoveredFile, indexChanged: true };
+        }
+
+        plugin.settings.importedArticles = markImportedArticleDeleted(plugin.settings.importedArticles, article.id);
+        return { file: null, indexChanged: true };
+    }
+
+    const recoveredFile = findFileByArticleId(plugin, article.id);
+    if (recoveredFile) {
+        plugin.settings.importedArticles = setImportedArticlePath(
+            plugin.settings.importedArticles,
+            article.id,
+            recoveredFile.path,
+        );
+        return { file: recoveredFile, indexChanged: true };
+    }
+
     // Use a sanitized version of the article's title for our filename.
     let name = (article.title ?? '').replace(/[\\/:<>?|*"]/gm, '').substring(0, 250).trim();
     if (!name) {
@@ -172,7 +219,50 @@ async function fileForArticle(
     const path = normalizePath(`${folder}/${name}.md`);
     const file = vault.getFileByPath(path);
 
-    return file || (create ? vault.create(path, '') : null);
+    if (file) {
+        plugin.settings.importedArticles = setImportedArticlePath(plugin.settings.importedArticles, article.id, file.path);
+        return { file, indexChanged: true };
+    }
+
+    if (!create) {
+        return { file: null, indexChanged: false };
+    }
+
+    const created = await vault.create(path, '');
+    plugin.settings.importedArticles = setImportedArticlePath(plugin.settings.importedArticles, article.id, created.path);
+    return { file: created, indexChanged: true };
+}
+
+function findFileByArticleId(plugin: InstapaperPlugin, articleId: number): TFile | null {
+    const propertyNames = getArticleIdPropertyNames(plugin.settings.frontmatter);
+
+    for (const file of plugin.app.vault.getMarkdownFiles()) {
+        const frontmatter = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+        if (!frontmatter) {
+            continue;
+        }
+
+        for (const propertyName of propertyNames) {
+            if (parseArticleId(frontmatter[propertyName]) === articleId) {
+                return file;
+            }
+        }
+    }
+
+    return null;
+}
+
+function parseArticleId(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isInteger(value)) {
+        return value;
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isInteger(parsed) ? parsed : null;
+    }
+
+    return null;
 }
 
 function linkForHighlight(highlight: InstapaperHighlight): string {
