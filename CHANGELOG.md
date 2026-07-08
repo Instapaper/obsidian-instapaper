@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.3.0] - Unreleased
 
+### Added
+
+- Synced notes now store the Instapaper article ID as an article property by default.
+
 ### Changed
 
 - Account connection now uses browser-based OAuth 2 authorization instead of entering credentials directly.
 - Added a "Sync now" button to the settings page.
 - Improved notes folder renaming behavior in settings, and the setting now stays in sync when the folder is renamed elsewhere.
+- Synced notes now keep a persistent article-to-note index so renamed or moved notes are resynced.
+- Deleted synced notes are now treated as intentional removals and are not recreated automatically on the next sync.
 
 ## [1.2.1] - 2026-04-04
 
