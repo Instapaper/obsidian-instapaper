@@ -110,7 +110,13 @@ export async function syncNotes(
             // exist and wasn't created (in which case we skip this article).
             let file: TFile | null;
             try {
-                file = await fileForArticle(article, vault, folder, opts.createFiles);
+                file = await fileForArticle(
+                    article,
+                    vault,
+                    folder,
+                    opts.createFiles,
+                    plugin.settings.stripEmojisFromTitle,
+                );
                 if (!file) continue;
             } catch (e) {
                 plugin.log(`fileForArticle("${article.title}"):`, e);
@@ -161,18 +167,44 @@ async function fileForArticle(
     article: InstapaperBookmark,
     vault: Vault,
     folder: string,
-    create: boolean = true
+    create: boolean = true,
+    stripEmojisFromTitle: boolean = true,
 ): Promise<TFile | null> {
-    // Use a sanitized version of the article's title for our filename.
-    let name = (article.title ?? '').replace(/[\\/:<>?|*"]/gm, '').substring(0, 250).trim();
-    if (!name) {
-        name = `Untitled-${article.id}`;
+    const preferredName = fileNameForArticle(article, { stripEmoji: stripEmojisFromTitle });
+    const preferredPath = normalizePath(`${folder}/${preferredName}.md`);
+    const preferredFile = vault.getFileByPath(preferredPath);
+
+    // Fallback to the alternate naming mode so changing this setting does not
+    // create duplicate notes for the same article.
+    const alternateName = fileNameForArticle(article, { stripEmoji: !stripEmojisFromTitle });
+    const alternatePath = normalizePath(`${folder}/${alternateName}.md`);
+    const alternateFile = preferredPath === alternatePath
+        ? null
+        : vault.getFileByPath(alternatePath);
+
+    const file = preferredFile ?? alternateFile;
+    return file || (create ? vault.create(preferredPath, '') : null);
+}
+
+function fileNameForArticle(
+    article: InstapaperBookmark,
+    options?: { stripEmoji?: boolean },
+): string {
+    let name = article.title ?? '';
+
+    if (options?.stripEmoji ?? false) {
+        name = name
+            .replace(/\p{Extended_Pictographic}/gu, '')
+            .replace(/[\u200D\uFE0F]/g, '');
     }
 
-    const path = normalizePath(`${folder}/${name}.md`);
-    const file = vault.getFileByPath(path);
+    name = name
+        .replace(/[\\/:<>?|*"]/gm, '')
+        .replace(/\s+/g, ' ')
+        .substring(0, 250)
+        .trim();
 
-    return file || (create ? vault.create(path, '') : null);
+    return name || `Untitled-${article.id}`;
 }
 
 function linkForHighlight(highlight: InstapaperHighlight): string {
