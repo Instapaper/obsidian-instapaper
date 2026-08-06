@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.3.0] - Unreleased
 
+### Added
+
+- Added a URL type dropdown under **Article properties → URL** to choose between Instapaper app links and web links for the URL property.
+
 ### Changed
 
 - Account connection now uses browser-based OAuth 2 authorization instead of entering credentials directly.

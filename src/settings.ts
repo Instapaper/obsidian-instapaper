@@ -21,6 +21,8 @@ export interface FrontmatterSettings {
     source: FrontmatterValueField;
 }
 
+export type ArticleUrlType = 'instapaper-private' | 'web';
+
 // The highlight template used before template customization was introduced.
 export const LEGACY_HIGHLIGHT_TEMPLATE = `> {{text}} [↗]({{link}})
 {{#note}}
@@ -37,6 +39,7 @@ const DEFAULT_HIGHLIGHT_TEMPLATE = `> {{text}} {{blockId}}
 export interface InstapaperPluginSettings {
     token?: InstapaperAccessToken;
     account?: InstapaperAccount;
+    articleUrlType: ArticleUrlType;
     syncFrequency: number;
     syncOnStart: boolean;
     notesFolder: string;
@@ -48,6 +51,7 @@ export interface InstapaperPluginSettings {
 
 // Note! This needs to be kept in sync with the deep merge in loadSettings().
 export const DEFAULT_SETTINGS = {
+    articleUrlType: 'instapaper-private' as ArticleUrlType,
     syncFrequency: 0,
     syncOnStart: true,
     notesFolder: 'Instapaper Notes',
@@ -397,6 +401,20 @@ export class InstapaperSettingTab extends PluginSettingTab {
         addField("Title", "The article's title", "title");
         addField("Author", "The article's author", "author");
         addField("URL", "The article's URL", "url");
+        group.addSetting((setting) => {
+            setting
+                .setName('URL type')
+                .setDesc('Choose the URL format written to the URL property.')
+                .addDropdown((dropdown) => {
+                    dropdown
+                        .addOption('instapaper-private', 'Instapaper app (instapaper-private://)')
+                        .addOption('web', 'Web (https://instapaper.com/read/...)')
+                        .setValue(this.plugin.settings.articleUrlType)
+                        .onChange(async (value) => {
+                            await this.plugin.saveSettings({ articleUrlType: value as ArticleUrlType });
+                        });
+                });
+        });
         addField("Publish date", "When the article was published", "pubdate");
         addField("Saved date", "When you saved the article to Instapaper", "date");
         addField("Tags", "Tags from Instapaper", "tags");

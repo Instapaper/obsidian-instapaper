@@ -1,6 +1,6 @@
 import { TFile, FileManager, moment } from "obsidian";
 import type { InstapaperBookmark, InstapaperTag } from "./api";
-import type { FrontmatterField, FrontmatterSettings } from "./settings";
+import type { ArticleUrlType, FrontmatterField, FrontmatterSettings } from "./settings";
 import { DEFAULT_SETTINGS } from "./settings";
 
 /**
@@ -26,7 +26,7 @@ export async function applyArticleFrontmatter(
     article: Partial<InstapaperBookmark>,
     settings: FrontmatterSettings,
     fileManager: FileManager,
-    options?: { removeDisabled?: boolean }
+    options?: { removeDisabled?: boolean; articleUrlType?: ArticleUrlType }
 ): Promise<void> {
     // Property order is preserved for existing files while new files
     // will have properties added in the order below.
@@ -48,8 +48,13 @@ export async function applyArticleFrontmatter(
         }
 
         if (settings.url.enabled && settings.url.propertyName) {
-            if (article.url) {
-                frontmatter[settings.url.propertyName] = article.url;
+            const url = getConfiguredArticleUrl(
+                article,
+                options?.articleUrlType ?? DEFAULT_SETTINGS.articleUrlType,
+            );
+
+            if (url) {
+                frontmatter[settings.url.propertyName] = url;
             } else {
                 delete frontmatter[settings.url.propertyName];
             }
@@ -134,4 +139,16 @@ function normalizeTag(tag: InstapaperTag): string {
 // https://help.obsidian.md/properties#Date
 function formatTimestamp(timestamp: number): string {
     return moment.unix(timestamp).format("YYYY-MM-DD");
+}
+
+function getConfiguredArticleUrl(article: Partial<InstapaperBookmark>, articleUrlType: ArticleUrlType): string | null {
+    if (article.id != null) {
+        if (articleUrlType === 'web') {
+            return `https://instapaper.com/read/${article.id}`;
+        }
+
+        return `instapaper-private://x-callback-url/open?bookmark_id=${article.id}`;
+    }
+
+    return article.url ?? null;
 }
