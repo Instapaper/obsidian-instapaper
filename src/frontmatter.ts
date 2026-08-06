@@ -31,6 +31,14 @@ export async function applyArticleFrontmatter(
     // Property order is preserved for existing files while new files
     // will have properties added in the order below.
     await fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
+        if (settings.articleId.enabled && settings.articleId.propertyName) {
+            if (article.id != null) {
+                frontmatter[settings.articleId.propertyName] = article.id;
+            } else {
+                delete frontmatter[settings.articleId.propertyName];
+            }
+        }
+
         if (settings.title.enabled && settings.title.propertyName) {
             if (article.title) {
                 frontmatter[settings.title.propertyName] = article.title;
@@ -116,6 +124,19 @@ export async function applyArticleFrontmatter(
             }
         }
     });
+}
+
+export function getArticleIdPropertyNames(settings: FrontmatterSettings): string[] {
+    const names = new Set<string>();
+
+    if (DEFAULT_SETTINGS.frontmatter.articleId.propertyName) {
+        names.add(DEFAULT_SETTINGS.frontmatter.articleId.propertyName);
+    }
+    if (settings.articleId.propertyName) {
+        names.add(settings.articleId.propertyName);
+    }
+
+    return [...names];
 }
 
 // https://help.obsidian.md/tags#Tag+format

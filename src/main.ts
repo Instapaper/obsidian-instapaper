@@ -1,7 +1,8 @@
-import { Keymap, Notice, Plugin, TFolder } from 'obsidian';
+import { Keymap, Notice, Plugin, TFile, TFolder } from 'obsidian';
 import { InstapaperAccount, InstapaperAPI } from './api'
 import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab, LEGACY_HIGHLIGHT_TEMPLATE } from './settings'
 import { syncNotes, type SyncNotesOptions } from './notes';
+import { markImportedArticleDeletedByPath, renameImportedArticlePath } from './note-index';
 
 type SyncResult = {
 	notes: number;
@@ -78,6 +79,27 @@ export default class InstapaperPlugin extends Plugin {
 			this.app.vault.on('rename', async (file, oldPath) => {
 				if (file instanceof TFolder && oldPath === this.settings.notesFolder) {
 					await this.saveSettings({ notesFolder: file.path });
+					return;
+				}
+
+				if (file instanceof TFile) {
+					const importedArticles = renameImportedArticlePath(this.settings.importedArticles, oldPath, file.path);
+					if (importedArticles !== this.settings.importedArticles) {
+						await this.saveSettings({ importedArticles });
+					}
+				}
+			})
+		);
+
+		this.registerEvent(
+			this.app.vault.on('delete', async (file) => {
+				if (!(file instanceof TFile)) {
+					return;
+				}
+
+				const importedArticles = markImportedArticleDeletedByPath(this.settings.importedArticles, file.path);
+				if (importedArticles !== this.settings.importedArticles) {
+					await this.saveSettings({ importedArticles });
 				}
 			})
 		);
@@ -196,6 +218,10 @@ export default class InstapaperPlugin extends Plugin {
 		this.settings = {
 			...DEFAULT_SETTINGS,
 			...data,
+			importedArticles: {
+				...DEFAULT_SETTINGS.importedArticles,
+				...data?.importedArticles,
+			},
 			frontmatter: {
 				...DEFAULT_SETTINGS.frontmatter,
 				...data?.frontmatter,
@@ -224,10 +250,18 @@ export default class InstapaperPlugin extends Plugin {
 	// ACCOUNT
 
 	async connectAccount(code: string): Promise<InstapaperAccount> {
+		const previousAccountId = this.settings.importedArticlesAccountId ?? this.settings.account?.id;
 		const { token, account } = await this.api.exchangeCode(code);
 		await this.saveSettings({
 			token: token,
 			account: account,
+			importedArticlesAccountId: account.id,
+			importedArticles: previousAccountId != null && previousAccountId !== account.id
+				? {}
+				: this.settings.importedArticles,
+			notesCursor: previousAccountId != null && previousAccountId !== account.id
+				? 0
+				: this.settings.notesCursor,
 		});
 
 		this.updateSyncInterval();
@@ -270,10 +304,13 @@ export default class InstapaperPlugin extends Plugin {
 		this.log(`synchronizing (${reason}) @ ${cursor}`);
 
 		try {
-			const { cursor: newCursor, count } = await syncNotes(this, token, cursor, options);
+			const { cursor: newCursor, count, indexChanged } = await syncNotes(this, token, cursor, options);
 			result.notes = count;
-			if (control?.saveCursor ?? true) {
-				await this.saveSettings({ notesCursor: newCursor });
+			if ((control?.saveCursor ?? true) || indexChanged) {
+				await this.saveSettings({
+					notesCursor: (control?.saveCursor ?? true) ? newCursor : this.settings.notesCursor,
+					importedArticles: this.settings.importedArticles,
+				});
 			}
 			if (options?.updateHighlightTemplate || ((options?.syncHighlights ?? true) && result.notes > 0)) {
 				await this.saveSettings({ appliedHighlightTemplate: this.settings.highlightTemplate });

@@ -1,6 +1,7 @@
 import { App, ButtonComponent, Platform, PluginSettingTab, Setting, SettingGroup, TextAreaComponent, TextComponent, TFolder, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount } from "./api";
+import type { ImportedArticleIndex } from "./note-index";
 
 export interface FrontmatterField {
     enabled: boolean;
@@ -12,6 +13,7 @@ export interface FrontmatterValueField extends FrontmatterField {
 }
 
 export interface FrontmatterSettings {
+    articleId: FrontmatterField;
     url: FrontmatterField;
     title: FrontmatterField;
     date: FrontmatterField;
@@ -37,10 +39,12 @@ const DEFAULT_HIGHLIGHT_TEMPLATE = `> {{text}} {{blockId}}
 export interface InstapaperPluginSettings {
     token?: InstapaperAccessToken;
     account?: InstapaperAccount;
+    importedArticlesAccountId?: number;
     syncFrequency: number;
     syncOnStart: boolean;
     notesFolder: string;
     notesCursor: number;
+    importedArticles: ImportedArticleIndex;
     frontmatter: FrontmatterSettings;
     highlightTemplate: string;
     appliedHighlightTemplate?: string;
@@ -52,7 +56,9 @@ export const DEFAULT_SETTINGS = {
     syncOnStart: true,
     notesFolder: 'Instapaper Notes',
     notesCursor: 0,
+    importedArticles: {},
     frontmatter: {
+        articleId: { enabled: true, propertyName: 'instapaperId' },
         url: { enabled: true, propertyName: 'url' },
         title: { enabled: false, propertyName: 'title' },
         date: { enabled: true, propertyName: 'date' },
@@ -394,6 +400,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
             });
         };
 
+        addField("Article ID", "The Instapaper article ID used to keep notes linked across rename and move", "articleId");
         addField("Title", "The article's title", "title");
         addField("Author", "The article's author", "author");
         addField("URL", "The article's URL", "url");
