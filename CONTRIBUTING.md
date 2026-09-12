@@ -5,7 +5,7 @@ Contributions are welcome! This guide attempts to answer common question about h
 ## Getting Started
 
 - Clone this repo to `<Vault>/.obsidian/plugins/obsidian-instapaper/`
-- Make sure your NodeJS is at least v16 (`node --version`)
+- Make sure your NodeJS is at least v22 (`node --version`)
 - Add your [API Credentials](#api-credentials) to a local `.env` file
 - `npm i` or `yarn` to install dependencies
 - `npm run dev` to start compilation in watch mode
@@ -20,13 +20,12 @@ If you need to manually install a copy of this plugin, copy the `main.js`, `mani
 
 ## API Credentials
 
-You'll need your own pair of Instapaper API [OAuth credentials](https://www.instapaper.com/api) to use the API. Some API calls require special privileges so you'll need to request that additional access.
+You'll need your own Instapaper API [OAuth consumer key](https://www.instapaper.com/api) to use the API. Some API calls require special privileges so you'll need to request that additional access.
 
-Add them to a local `.env` file:
+Add it to a local `.env` file:
 
 ```
 INSTAPAPER_CONSUMER_KEY=xxx
-INSTAPAPER_CONSUMER_SECRET=xxx
 ```
 
 ## ESLint

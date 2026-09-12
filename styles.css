@@ -29,6 +29,29 @@ textarea.instapaper-highlight-template {
     width: 100%;
 }
 
+.instapaper-device-authorization {
+    align-items: flex-start;
+}
+
+.instapaper-device-authorization code.instapaper-device-code {
+    display: block;
+    width: fit-content;
+    margin: 0.5em 0;
+    padding: 0.4em 0.65em;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    font-size: 2em;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    user-select: all;
+}
+
+.instapaper-device-meta {
+    color: var(--text-muted);
+}
+
 .instapaper-update-action button {
     color: var(--interactive-accent);
 }

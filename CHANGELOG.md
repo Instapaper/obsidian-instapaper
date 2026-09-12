@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Account connection now uses browser-based OAuth 2 authorization instead of entering credentials directly.
+- Account connection now uses browser-based OAuth 2 device authorization instead of entering credentials directly.
 - Added a "Sync now" button to the settings page.
 - Improved notes folder renaming behavior in settings, and the setting now stays in sync when the folder is renamed elsewhere.
 

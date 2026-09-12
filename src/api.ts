@@ -1,13 +1,12 @@
 import { requestUrl } from "obsidian";
+import { DeviceAuthorizationError, type DevicePollStatus } from "./oauth";
 
 export interface InstapaperClientOptions {
     baseURL: string;
-    oauthRedirectURI: string;
 }
 
 const DEFAULT_OPTIONS: InstapaperClientOptions = {
     baseURL: 'https://www.instapaper.com',
-    oauthRedirectURI: 'obsidian://instapaper-auth',
 }
 
 export type InstapaperAccessToken = {
@@ -18,6 +17,20 @@ export type InstapaperAccessToken = {
 export type InstapaperAccount = {
     id: number;
     username: string;
+}
+
+export type InstapaperDeviceAuthorization = {
+    device_code: string;
+    user_code: string;
+    verification_uri: string;
+    verification_uri_complete?: string;
+    expires_in: number;
+    interval: number;
+}
+
+export type InstapaperDeviceToken = {
+    token: InstapaperAccessToken;
+    account: InstapaperAccount;
 }
 
 export type InstapaperBookmark = {
@@ -64,14 +77,26 @@ function encodeFormData(data: Record<string, string | number | boolean | null | 
     return params.toString();
 }
 
+function isURLFromOrigin(value: unknown, origin: string): value is string {
+    try {
+        return typeof value === 'string' && new URL(value).origin === origin;
+    } catch {
+        return false;
+    }
+}
+
+function deviceErrorMessage(error: string): string {
+    if (error === 'access_denied') return 'Instapaper authorization was denied';
+    if (error === 'expired_token') return 'Instapaper authorization expired; try connecting again';
+    return 'Failed to connect Instapaper account';
+}
+
 export class InstapaperAPI {
     private consumerKey: string;
-    private consumerSecret: string;
     options: InstapaperClientOptions;
 
-    constructor(consumerKey: string, consumerSecret: string, options?: Partial<InstapaperClientOptions>) {
+    constructor(consumerKey: string, options?: Partial<InstapaperClientOptions>) {
         this.consumerKey = consumerKey;
-        this.consumerSecret = consumerSecret;
         this.options = Object.assign({}, DEFAULT_OPTIONS, options);
     }
 
@@ -116,38 +141,74 @@ export class InstapaperAPI {
         }
     }
 
-    getAuthorizeURL(): string {
-        const params = new URLSearchParams({
-            client_id: this.consumerKey,
-            redirect_uri: this.options.oauthRedirectURI,
-            response_type: 'code',
+    async requestDeviceCode(): Promise<InstapaperDeviceAuthorization> {
+        const response = await requestUrl({
+            url: `${this.options.baseURL}/oauth2/device/code`,
+            method: 'POST',
+            contentType: 'application/x-www-form-urlencoded',
+            body: new URLSearchParams({ client_id: this.consumerKey }).toString(),
+            throw: true,
         });
-        return `${this.options.baseURL}/oauth2/authorize?${params.toString()}`;
+        const data = response.json as Partial<InstapaperDeviceAuthorization>;
+        const baseOrigin = new URL(this.options.baseURL).origin;
+
+        if (
+            typeof data.device_code !== 'string' ||
+            typeof data.user_code !== 'string' ||
+            !isURLFromOrigin(data.verification_uri, baseOrigin) ||
+            (data.verification_uri_complete != null &&
+                !isURLFromOrigin(data.verification_uri_complete, baseOrigin)) ||
+            typeof data.expires_in !== 'number' ||
+            !Number.isFinite(data.expires_in) ||
+            data.expires_in <= 0 ||
+            typeof data.interval !== 'number' ||
+            !Number.isFinite(data.interval) ||
+            data.interval <= 0
+        ) {
+            throw new Error('Invalid device authorization response');
+        }
+
+        return data as InstapaperDeviceAuthorization;
     }
 
-    async exchangeCode(
-        code: string,
-    ): Promise<{ token: InstapaperAccessToken; account: InstapaperAccount }> {
+    async pollDeviceToken(deviceCode: string): Promise<InstapaperDeviceToken | DevicePollStatus> {
         const response = await requestUrl({
             url: `${this.options.baseURL}/oauth2/token`,
             method: 'POST',
             contentType: 'application/x-www-form-urlencoded',
             body: new URLSearchParams({
+                grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+                device_code: deviceCode,
                 client_id: this.consumerKey,
-                redirect_uri: this.options.oauthRedirectURI,
-                client_secret: this.consumerSecret,
-                code: code,
             }).toString(),
-            throw: true,
+            throw: false,
         });
-
-        const data = (await response.json) as {
-            access_token: string;
-            user: InstapaperAccount;
+        const data = response.json as {
+            access_token?: unknown;
+            user?: Partial<InstapaperAccount>;
+            error?: unknown;
+            error_description?: unknown;
         };
+
+        if (response.status >= 400) {
+            const error = typeof data.error === 'string' ? data.error : 'unknown_error';
+            if (error === 'authorization_pending' || error === 'slow_down') return error;
+            throw new DeviceAuthorizationError(
+                typeof data.error_description === 'string' ? data.error_description : deviceErrorMessage(error),
+            );
+        }
+
+        if (
+            typeof data.access_token !== 'string' ||
+            typeof data.user?.id !== 'number' ||
+            typeof data.user.username !== 'string'
+        ) {
+            throw new Error('Invalid device token response');
+        }
+
         return {
             token: { key: data.access_token },
-            account: data.user,
+            account: data.user as InstapaperAccount,
         };
     }
 

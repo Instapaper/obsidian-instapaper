@@ -1,6 +1,7 @@
-import { App, ButtonComponent, Platform, PluginSettingTab, Setting, SettingGroup, TextAreaComponent, TextComponent, TFolder, normalizePath } from "obsidian";
+import { App, ButtonComponent, PluginSettingTab, Setting, SettingGroup, TextAreaComponent, TextComponent, TFolder, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
-import type { InstapaperAccessToken, InstapaperAccount } from "./api";
+import type { InstapaperAccessToken, InstapaperAccount, InstapaperDeviceAuthorization } from "./api";
+import { DeviceAuthorizationError, pollDeviceAuthorization } from "./oauth";
 
 export interface FrontmatterField {
     enabled: boolean;
@@ -66,7 +67,10 @@ export const DEFAULT_SETTINGS = {
 
 export class InstapaperSettingTab extends PluginSettingTab {
     plugin: InstapaperPlugin;
-    authState: 'idle' | 'browser' | 'exchange' = 'idle';
+    private authorization?: InstapaperDeviceAuthorization;
+    private authorizationAbort?: AbortController;
+    private authorizationExpiresAt?: number;
+    private authorizationCountdown?: number;
 
     constructor(app: App, plugin: InstapaperPlugin) {
         super(app, plugin);
@@ -76,6 +80,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
     display(): void {
         const { containerEl } = this;
 
+        this.stopAuthorizationCountdown();
         containerEl.empty();
 
         this.addAccountSettings(containerEl);
@@ -103,18 +108,30 @@ export class InstapaperSettingTab extends PluginSettingTab {
                         this.display();
                     })
                 });
-        } else if (this.authState === 'exchange') {
-            setting.setDesc('Connecting your account…');
-        } else if (this.authState === 'browser') {
+        } else if (this.authorization) {
+            const authorization = this.authorization;
+            const url = authorization.verification_uri_complete ?? authorization.verification_uri;
+
             setting
-                .setDesc('Waiting for authorization in your browser…')
+                .setClass('instapaper-device-authorization')
+                .setDesc(createFragment((fragment) => {
+                    fragment.createDiv({ text: 'Confirm that Instapaper shows this code:' });
+                    fragment.createEl('code', {
+                        cls: 'instapaper-device-code',
+                        text: authorization.user_code,
+                    });
+                    const meta = fragment.createDiv({ cls: 'instapaper-device-meta' });
+                    meta.createEl('a', { text: 'Authorize on Instapaper', href: url });
+                    meta.appendText(' · ');
+                    const countdown = meta.createSpan({ attr: { role: 'timer' } });
+                    this.startAuthorizationCountdown(countdown);
+                }))
                 .addButton((button) => {
                     button.setButtonText('Cancel');
-                    button.onClick(() => {
-                        this.authState = 'idle';
-                        this.display();
-                    });
+                    button.onClick(() => this.cancelAuthorization());
                 });
+        } else if (this.authorizationAbort) {
+            setting.setDesc('Connecting your account…');
         } else {
             setting
                 .setDesc('Connect your Instapaper account')
@@ -122,21 +139,87 @@ export class InstapaperSettingTab extends PluginSettingTab {
                     button.setButtonText('Connect');
                     button.setTooltip('Connect your Instapaper account')
                     button.setCta();
-                    button.onClick(() => {
-                        this.authState = 'browser';
-                        this.display();
-
-                        // On Desktop, always bypass Obsidian's Web Viewer plugin
-                        // interception, which can't handle obsidian:// direct URLs.
-                        const url = this.plugin.api.getAuthorizeURL();
-                        if (Platform.isDesktopApp) {
-                            window.require?.('electron').shell.openExternal(url).catch(() => window.open(url));
-                        } else {
-                            window.open(url);
-                        }
-                    })
+                    button.onClick(() => { void this.authorize(); });
                 });
         }
+    }
+
+    private startAuthorizationCountdown(element: HTMLElement): void {
+        const expiresAt = this.authorizationExpiresAt;
+        if (expiresAt == null) return;
+
+        const update = () => {
+            const secondsLeft = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+            const minutes = Math.floor(secondsLeft / 60);
+            const seconds = String(secondsLeft % 60).padStart(2, '0');
+            element.setText(`Code expires in ${minutes}:${seconds}`);
+
+            if (secondsLeft === 0 && this.authorization) {
+                this.plugin.notice('Instapaper authorization expired');
+                this.cancelAuthorization();
+            }
+        };
+
+        update();
+        if (this.authorization) this.authorizationCountdown = window.setInterval(update, 1000);
+    }
+
+    private stopAuthorizationCountdown(): void {
+        if (this.authorizationCountdown != null) window.clearInterval(this.authorizationCountdown);
+        this.authorizationCountdown = undefined;
+    }
+
+    private async authorize(): Promise<void> {
+        const controller = new AbortController();
+        this.authorizationAbort?.abort();
+        this.authorizationAbort = controller;
+        this.display();
+
+        try {
+            const authorization = await this.plugin.api.requestDeviceCode();
+            if (controller.signal.aborted) return;
+
+            this.authorization = authorization;
+            this.authorizationExpiresAt = Date.now() + authorization.expires_in * 1000;
+            this.display();
+            window.open(authorization.verification_uri_complete ?? authorization.verification_uri);
+
+            const { token, account } = await pollDeviceAuthorization(
+                authorization,
+                () => this.plugin.api.pollDeviceToken(authorization.device_code),
+                controller.signal,
+            );
+            if (controller.signal.aborted) return;
+
+            this.authorization = undefined;
+            this.display();
+            await this.plugin.connectAccount(token, account);
+            this.plugin.notice(`Connected Instapaper account: ${account.username}`);
+        } catch (e) {
+            if (!controller.signal.aborted) {
+                this.plugin.log('Failed to connect account:', e);
+                this.plugin.notice(e instanceof DeviceAuthorizationError
+                    ? e.message
+                    : 'Failed to connect Instapaper account');
+            }
+        } finally {
+            if (this.authorizationAbort === controller) {
+                this.stopAuthorizationCountdown();
+                this.authorizationAbort = undefined;
+                this.authorization = undefined;
+                this.authorizationExpiresAt = undefined;
+                this.display();
+            }
+        }
+    }
+
+    cancelAuthorization(redisplay = true): void {
+        this.stopAuthorizationCountdown();
+        this.authorizationAbort?.abort();
+        this.authorizationAbort = undefined;
+        this.authorization = undefined;
+        this.authorizationExpiresAt = undefined;
+        if (redisplay) this.display();
     }
 
     private addSyncSettings(containerEl: HTMLElement) {
