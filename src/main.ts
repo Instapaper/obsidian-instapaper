@@ -1,5 +1,5 @@
 import { Keymap, Notice, Plugin, TFolder } from 'obsidian';
-import { InstapaperAccount, InstapaperAPI } from './api'
+import { InstapaperAPI, type InstapaperAccessToken, type InstapaperAccount } from './api'
 import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab, LEGACY_HIGHLIGHT_TEMPLATE } from './settings'
 import { syncNotes, type SyncNotesOptions } from './notes';
 
@@ -17,7 +17,6 @@ export default class InstapaperPlugin extends Plugin {
 	async onload() {
 		this.api = new InstapaperAPI(
 			process.env.INSTAPAPER_CONSUMER_KEY as string,
-			process.env.INSTAPAPER_CONSUMER_SECRET as string,
 			process.env.INSTAPAPER_BASE_URL ? { baseURL: process.env.INSTAPAPER_BASE_URL } : undefined,
 		);
 
@@ -25,32 +24,6 @@ export default class InstapaperPlugin extends Plugin {
 
 		this.settingTab = new InstapaperSettingTab(this.app, this);
 		this.addSettingTab(this.settingTab);
-
-		this.registerObsidianProtocolHandler('instapaper-auth', async (params) => {
-			if (params.error) {
-				if (this.settingTab) {
-					this.settingTab.authState = 'idle';
-				}
-				this.notice('Failed to connect Instapaper account');
-			} else if (params.code) {
-				if (this.settingTab) {
-					this.settingTab.authState = 'exchange';
-					this.settingTab.display();
-				}
-				try {
-					const account = await this.connectAccount(params.code);
-					this.notice(`Connected Instapaper account: ${account.username}`);
-				} catch (e) {
-					this.log('Failed to connect account:', e);
-					await this.disconnectAccount();
-					this.notice('Failed to connect Instapaper account');
-				}
-			}
-			if (this.settingTab) {
-				this.settingTab.authState = 'idle';
-				this.settingTab.display();
-			}
-		});
 
 		this.registerEvent(
 			this.app.workspace.on('url-menu', (menu, url) => {
@@ -142,6 +115,7 @@ export default class InstapaperPlugin extends Plugin {
 	}
 
 	onunload() {
+		this.settingTab?.cancelAuthorization(false);
 	}
 
 	log(message: string, ...args: unknown[]): void {
@@ -223,12 +197,8 @@ export default class InstapaperPlugin extends Plugin {
 
 	// ACCOUNT
 
-	async connectAccount(code: string): Promise<InstapaperAccount> {
-		const { token, account } = await this.api.exchangeCode(code);
-		await this.saveSettings({
-			token: token,
-			account: account,
-		});
+	async connectAccount(token: InstapaperAccessToken, account: InstapaperAccount): Promise<InstapaperAccount> {
+		await this.saveSettings({ token, account });
 
 		this.updateSyncInterval();
 		if (this.settings.syncOnStart) {

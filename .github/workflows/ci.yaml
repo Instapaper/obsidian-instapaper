@@ -26,8 +26,9 @@ jobs:
         run: npm audit signatures
       - name: Lint
         run: npm run lint
+      - name: Test
+        run: npm test
       - name: Build
         run: npm run build
         env:
           INSTAPAPER_CONSUMER_KEY: consumer_key
-          INSTAPAPER_CONSUMER_SECRET: consumer_secret
