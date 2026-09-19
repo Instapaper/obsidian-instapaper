@@ -67,7 +67,18 @@ export async function syncNotes(
     const template = plugin.settings.highlightTemplate;
 
     const folder = normalizePath(plugin.settings.notesFolder);
-    if (!await vault.adapter.exists(folder)) {
+    if (!vault.getFolderByPath(folder)) {
+        // The folder doesn't appear in the vault index. If it nonetheless exists
+		// on disk, the index is stale and nothing here can repair it: createFolder
+        // won't touch an existing path, and writing anyway would put the notes
+        // somewhere Obsidian will never display. We can just report the situation.
+        if (await vault.adapter.exists(folder)) {
+            plugin.notice(
+                `The notes folder "${folder}" exists on disk but is not visible to Obsidian. ` +
+                `Restart Obsidian or choose a different notes folder.`
+            );
+            return { cursor, count: 0 };
+        }
         if (!opts.createFiles) {
             return { cursor, count: 0 };
         }

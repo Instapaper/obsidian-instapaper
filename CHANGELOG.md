@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a "Sync now" button to the settings page.
 - Improved notes folder renaming behavior in settings, and the setting now stays in sync when the folder is renamed elsewhere.
 
+### Fixed
+
+- Notes are no longer synced into a folder that exists on disk but isn't known to Obsidian, which made the folder and its notes invisible in the app. Sync now reports the problem instead of writing notes you can't see.
+
 ## [1.2.1] - 2026-04-04
 
 ### Changed
