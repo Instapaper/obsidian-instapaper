@@ -137,7 +137,10 @@ export async function syncNotes(
                     article,
                     plugin.settings.frontmatter,
                     fileManager,
-                    { removeDisabled: opts.removeDisabledProperties }
+                    {
+                        removeDisabled: opts.removeDisabledProperties,
+                        articleUrlType: plugin.settings.articleUrlType,
+                    }
                 );
             }
 
