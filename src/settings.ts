@@ -1,7 +1,7 @@
 import { App, ButtonComponent, PluginSettingTab, Setting, SettingGroup, TextAreaComponent, TextComponent, TFolder, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperAccount, InstapaperDeviceAuthorization } from "./api";
-import { DeviceAuthorizationError, pollDeviceAuthorization } from "./oauth";
+import { pollDeviceAuthorization } from "./oauth";
 
 export interface FrontmatterField {
     enabled: boolean;
@@ -198,9 +198,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
         } catch (e) {
             if (!controller.signal.aborted) {
                 this.plugin.log('Failed to connect account:', e);
-                this.plugin.notice(e instanceof DeviceAuthorizationError
-                    ? e.message
-                    : 'Failed to connect Instapaper account');
+                this.plugin.notice('Failed to connect Instapaper account', e);
             }
         } finally {
             if (this.authorizationAbort === controller) {
@@ -252,7 +250,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                                 this.plugin.reportSyncResult(result);
                             } catch (e) {
                                 this.plugin.log('Sync failed:', e);
-                                this.plugin.notice('Failed to sync with Instapaper');
+                                this.plugin.notice('Failed to sync with Instapaper', e);
                             } finally {
                                 button.setDisabled(false);
                             }
@@ -396,7 +394,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                                 this.plugin.notice('Updated Instapaper notes');
                             } catch (e) {
                                 this.plugin.log('Sync failed:', e);
-                                this.plugin.notice('Failed to update highlights');
+                                this.plugin.notice('Failed to update highlights', e);
                             }
                         });
                     updateButton = button;
@@ -529,7 +527,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
                             this.plugin.notice('Updated Instapaper notes');
                         } catch (e) {
                             this.plugin.log('Sync failed:', e);
-                            this.plugin.notice('Failed to sync with Instapaper');
+                            this.plugin.notice('Failed to sync with Instapaper', e);
                         }
                     });
             });
