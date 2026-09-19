@@ -1,7 +1,8 @@
 import { Keymap, Notice, Plugin, TFolder } from 'obsidian';
 import { InstapaperAPI, type InstapaperAccessToken, type InstapaperAccount } from './api'
+import { DeviceAuthorizationError } from './oauth'
 import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab, LEGACY_HIGHLIGHT_TEMPLATE } from './settings'
-import { syncNotes, type SyncNotesOptions } from './notes';
+import { SyncError, syncNotes, type SyncNotesOptions } from './notes';
 
 type SyncResult = {
 	notes: number;
@@ -73,9 +74,9 @@ export default class InstapaperPlugin extends Plugin {
 							const resync = Keymap.isModifier(evt, "Mod");
 							this.runSync('manual', { resync })
 								.then(result => this.reportSyncResult(result))
-								.catch(e => {
+								.catch((e: unknown) => {
 									this.log('Sync failed:', e);
-									this.notice('Failed to sync with Instapaper');
+									this.notice('Failed to sync with Instapaper', e);
 								});
 						});
 				});
@@ -94,9 +95,9 @@ export default class InstapaperPlugin extends Plugin {
 				if (!checking) {
 					this.runSync('manual')
 						.then(result => this.reportSyncResult(result))
-						.catch(e => {
+						.catch((e: unknown) => {
 							this.log('Sync command failed:', e);
-							this.notice('Failed to sync with Instapaper');
+							this.notice('Failed to sync with Instapaper', e);
 						});
 				}
 
@@ -107,7 +108,7 @@ export default class InstapaperPlugin extends Plugin {
 		// Optionally run an immediate sync as soon as the workspace is ready.
 		if (this.settings.syncOnStart && this.settings.token) {
 			this.app.workspace.onLayoutReady(() => {
-				this.runSync('on start').catch(e => {
+				this.runSync('on start').catch((e: unknown) => {
 					this.log('Sync on start failed:', e);
 				});
 			})
@@ -124,7 +125,14 @@ export default class InstapaperPlugin extends Plugin {
 		}
 	}
 
-	notice(message: string): Notice {
+	/**
+	 * Show a notice. When an error is given, its own message is shown instead
+	 * if it was written for the user; otherwise `message` is the fallback.
+	 */
+	notice(message: string, error?: unknown): Notice {
+		if (error instanceof SyncError || error instanceof DeviceAuthorizationError) {
+			message = error.message;
+		}
 		this.log(message);
 		return new Notice(message);
 	}
@@ -202,7 +210,12 @@ export default class InstapaperPlugin extends Plugin {
 
 		this.updateSyncInterval();
 		if (this.settings.syncOnStart) {
-			await this.runSync('on connect');
+			// The account is connected either way; a sync failure is reported
+			// separately rather than failing the connection.
+			await this.runSync('on connect').catch((e: unknown) => {
+				this.log('Sync on connect failed:', e);
+				this.notice('Failed to sync with Instapaper', e);
+			});
 		}
 
 		return account;
@@ -250,6 +263,7 @@ export default class InstapaperPlugin extends Plugin {
 			}
 		} catch (e) {
 			this.log('sync failure:', e);
+			throw e;
 		} finally {
 			this.syncInProgress = false;
 		}
@@ -274,7 +288,9 @@ export default class InstapaperPlugin extends Plugin {
 		if (!timeout) return; // manual
 
 		this.syncInterval = window.setInterval(() => {
-			void this.runSync('scheduled')
+			this.runSync('scheduled').catch((e: unknown) => {
+				this.log('Scheduled sync failed:', e);
+			});
 		}, timeout);
 		this.registerInterval(this.syncInterval);
 	}

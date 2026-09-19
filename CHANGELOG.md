@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Notes are no longer synced into a folder that exists on disk but isn't known to Obsidian, which made the folder and its notes invisible in the app. Sync now reports the problem instead of writing notes you can't see.
+- Sync failures are now reported instead of being silently swallowed. The "Update" buttons in settings no longer claim to have updated notes when the sync failed, and the highlight template migration no longer disables its own retry button on failure.
 
 ## [1.2.1] - 2026-04-04
 

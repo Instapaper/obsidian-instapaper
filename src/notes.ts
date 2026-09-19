@@ -7,6 +7,9 @@ import { applyArticleFrontmatter } from "./frontmatter";
 // Disable HTML escaping. We render to Markdown.
 Mustache.escape = (text: string) => text;
 
+/** A sync failure whose message is meant to be shown to the user. */
+export class SyncError extends Error { }
+
 export interface SyncNotesOptions {
     /**
      * Whether to create new files for articles.
@@ -69,15 +72,14 @@ export async function syncNotes(
     const folder = normalizePath(plugin.settings.notesFolder);
     if (!vault.getFolderByPath(folder)) {
         // The folder doesn't appear in the vault index. If it nonetheless exists
-		// on disk, the index is stale and nothing here can repair it: createFolder
+        // on disk, the index is stale and nothing here can repair it: createFolder
         // won't touch an existing path, and writing anyway would put the notes
-        // somewhere Obsidian will never display. We can just report the situation.
+        // somewhere Obsidian will never display.
         if (await vault.adapter.exists(folder)) {
-            plugin.notice(
+            throw new SyncError(
                 `The notes folder "${folder}" exists on disk but is not visible to Obsidian. ` +
                 `Restart Obsidian or choose a different notes folder.`
             );
-            return { cursor, count: 0 };
         }
         if (!opts.createFiles) {
             return { cursor, count: 0 };
