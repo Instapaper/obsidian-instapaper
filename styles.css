@@ -3,12 +3,10 @@
     cursor: not-allowed;
 }
 
-.instapaper-article-properties input[type="text"]:invalid,
-.instapaper-connect-account input[type="text"]:invalid,
-.instapaper-connect-account input[type="password"]:invalid,
-textarea.instapaper-highlight-template:invalid {
-    border-color: var(--background-modifier-error) !important;
-    background-color: rgba(var(--background-modifier-error-rgb), 0.2) !important;
+.instapaper-article-properties .setting-item-control input[type="text"]:invalid,
+.instapaper-highlight-template-setting textarea.instapaper-highlight-template:invalid {
+    border-color: var(--background-modifier-error);
+    background-color: rgba(var(--background-modifier-error-rgb), 0.2);
 }
 
 .instapaper-highlight-template-setting {
