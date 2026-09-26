@@ -7,11 +7,11 @@ function wait(ms: number, signal: AbortSignal): Promise<void> {
 
     return new Promise((resolve) => {
         const done = () => {
-            clearTimeout(timeout);
+            window.clearTimeout(timeout);
             signal.removeEventListener('abort', done);
             resolve();
         };
-        const timeout = setTimeout(done, ms);
+        const timeout = window.setTimeout(done, ms);
         signal.addEventListener('abort', done, { once: true });
     });
 }
