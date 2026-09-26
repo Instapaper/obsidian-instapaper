@@ -487,9 +487,8 @@ export class InstapaperSettingTab extends PluginSettingTab {
             const desc = 'Update existing notes to use these properties';
             const makeDesc = (withRemoval: boolean = false) => withRemoval
                 ? createFragment((frag) => {
-                    frag.appendText(`${desc}, `);
-                    frag.createEl('strong', { text: 'removing disabled properties' });
-                    frag.appendText('.');
+                    frag.appendText(`${desc}. `);
+                    frag.createEl('strong', { text: 'Disabled properties will be removed.' });
                 })
                 : `${desc}.`;
 
