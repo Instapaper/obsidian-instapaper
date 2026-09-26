@@ -4,10 +4,10 @@
 	"description": "Official Instapaper plugin for Obsidian.",
 	"main": "main.js",
 	"scripts": {
-		"dev": "node esbuild.config.mjs",
+		"dev": "node --env-file-if-exists=.env esbuild.config.mjs",
 		"lint": "eslint src",
 		"test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types tests/oauth.test.mts",
-		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"build": "tsc -noEmit -skipLibCheck && node --env-file-if-exists=.env esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
 	"keywords": [
@@ -20,7 +20,6 @@
 		"@eslint/js": "10.0.1",
 		"@types/mustache": "4.2.6",
 		"builtin-modules": "5.4.0",
-		"dotenv": "17.4.2",
 		"esbuild": "0.28.1",
 		"eslint": "10.0.2",
 		"eslint-plugin-no-unsanitized": "4.1.5",
