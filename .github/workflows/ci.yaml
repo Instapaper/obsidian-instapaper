@@ -30,5 +30,3 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
-        env:
-          INSTAPAPER_CONSUMER_KEY: consumer_key
