@@ -42,7 +42,7 @@ const context = await esbuild.context({
 	define: {
 		'process.env.INSTAPAPER_DEBUG': JSON.stringify(process.env['INSTAPAPER_DEBUG'] ?? !prod),
 		'process.env.INSTAPAPER_BASE_URL': JSON.stringify(process.env['INSTAPAPER_BASE_URL'] ?? ''),
-		'process.env.INSTAPAPER_CONSUMER_KEY': JSON.stringify(process.env['INSTAPAPER_CONSUMER_KEY']),
+		'process.env.INSTAPAPER_CONSUMER_KEY': JSON.stringify(process.env['INSTAPAPER_CONSUMER_KEY'] ?? ''),
 	},
 });
 
