@@ -40,6 +40,7 @@ export interface InstapaperPluginSettings {
     account?: InstapaperAccount;
     syncFrequency: number;
     syncOnStart: boolean;
+    stripEmojisFromTitle: boolean;
     notesFolder: string;
     notesCursor: number;
     frontmatter: FrontmatterSettings;
@@ -51,6 +52,7 @@ export interface InstapaperPluginSettings {
 export const DEFAULT_SETTINGS = {
     syncFrequency: 0,
     syncOnStart: true,
+    stripEmojisFromTitle: true,
     notesFolder: 'Instapaper Notes',
     notesCursor: 0,
     frontmatter: {
@@ -409,6 +411,18 @@ export class InstapaperSettingTab extends PluginSettingTab {
 
         group.addSetting((setting) => {
             setting.setDesc('Configure which article properties to add. Properties are only added when available.');
+        });
+
+        group.addSetting((setting) => {
+            setting
+                .setName('Strip emojis from note titles')
+                .setDesc('When enabled, emoji characters are removed from article titles before generating note filenames.')
+                .addToggle((toggle) => {
+                    toggle.setValue(this.plugin.settings.stripEmojisFromTitle);
+                    toggle.onChange(async (value) => {
+                        await this.plugin.saveSettings({ stripEmojisFromTitle: value });
+                    });
+                });
         });
 
         const addField = (
