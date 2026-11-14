@@ -150,7 +150,7 @@ export async function syncNotes(
                 ).trimEnd();
                 const newFormat = contentForHighlight(highlight, to).trimEnd();
                 const fileContent = await vault.read(file);
-                if (fileContent.contains(oldFormat)) {
+                if (fileContent.includes(oldFormat)) {
                     await vault.modify(file, fileContent.replace(oldFormat, newFormat));
                 }
             }
@@ -198,8 +198,8 @@ function blockIdentifierForHighlight(highlight: InstapaperHighlight): string {
 }
 
 function hasHighlightMarker(content: string, highlight: InstapaperHighlight): boolean {
-    return content.contains(blockIdentifierForHighlight(highlight))
-        || content.contains(linkForHighlight(highlight));
+    return content.includes(blockIdentifierForHighlight(highlight))
+        || content.includes(linkForHighlight(highlight));
 }
 
 // Reproduces the exact output of the pre-template code (1.1.5 release format).
@@ -230,7 +230,7 @@ function contentForHighlight(
     // Ensure a deduplication anchor is present. If neither the link nor the
     // block identifier is included, append the block identifier. Block
     // identifiers must be preceded by a space (required by Obsidian).
-    if (!content.contains(link) && !content.contains(blockId)) {
+    if (!content.includes(link) && !content.includes(blockId)) {
         content = content.trimEnd() + ` ${blockId}`;
     }
 
