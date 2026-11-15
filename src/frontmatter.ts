@@ -55,6 +55,10 @@ export async function applyArticleFrontmatter(
             }
         }
 
+        if (article.id) {
+            frontmatter['instapaper-url'] = `https://instapaper.com/read/${article.id}`;
+        }
+
         if (settings.pubdate.enabled && settings.pubdate.propertyName) {
             if (article.pubtime) {
                 frontmatter[settings.pubdate.propertyName] = formatTimestamp(article.pubtime);

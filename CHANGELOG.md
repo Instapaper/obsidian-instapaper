@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Notes now include an `instapaper-url` property linking to the article in Instapaper. Existing notes get it the next time they're synced.
+
 ### Changed
 
 - The Instapaper access token is now kept in Obsidian's secure secret storage instead of the plugin's settings file. Existing tokens move automatically. Secrets aren't synced between devices, so each device needs to connect its own account.
