@@ -1,7 +1,8 @@
-import { TFile, FileManager, moment } from "obsidian";
+import { App, TFile, FileManager, getFrontMatterInfo, moment, parseYaml } from "obsidian";
 import type { InstapaperBookmark, InstapaperTag } from "./api";
 import type { FrontmatterField, FrontmatterSettings } from "./settings";
 import { DEFAULT_SETTINGS } from "./settings";
+import { INSTAPAPER_URL_PROPERTY, instapaperUrl } from "./urls";
 
 /**
  * Obsidian default properties
@@ -56,7 +57,7 @@ export async function applyArticleFrontmatter(
         }
 
         if (article.id) {
-            frontmatter['instapaper-url'] = `https://instapaper.com/read/${article.id}`;
+            frontmatter[INSTAPAPER_URL_PROPERTY] = instapaperUrl(article.id);
         }
 
         if (settings.pubdate.enabled && settings.pubdate.propertyName) {
@@ -120,6 +121,22 @@ export async function applyArticleFrontmatter(
             }
         }
     });
+}
+
+/**
+ * Read a file's frontmatter. getFileCache() is null until Obsidian indexes a
+ * file (e.g. one synced from another device while closed), so those are read
+ * directly.
+ */
+export async function frontmatterFor(app: App, file: TFile): Promise<Frontmatter | undefined> {
+    const cache = app.metadataCache.getFileCache(file);
+    if (cache) return cache.frontmatter;
+    try {
+        const info = getFrontMatterInfo(await app.vault.cachedRead(file));
+        return info.exists ? parseYaml(info.frontmatter) as Frontmatter : undefined;
+    } catch {
+        return undefined;
+    }
 }
 
 // https://help.obsidian.md/tags#Tag+format

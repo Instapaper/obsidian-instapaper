@@ -3,6 +3,7 @@ import { InstapaperAPI, type InstapaperAccessToken, type InstapaperAccount } fro
 import { DeviceAuthorizationError, decodeTokenSecret, encodeTokenSecret } from './oauth'
 import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab, LEGACY_HIGHLIGHT_TEMPLATE } from './settings'
 import { SyncError, syncNotes, type SyncNotesOptions } from './notes';
+import { INSTAPAPER_URL_PROPERTY } from './urls';
 
 type SyncResult = {
 	notes: number;
@@ -283,6 +284,20 @@ export default class InstapaperPlugin extends Plugin {
 		const accountId = this.settings.account?.id;
 
 		try {
+			// Notes synced before instapaper-url existed need it to be found by
+			// ID. Only that property is written, so user edits are preserved.
+			if (!this.settings.backfilledInstapaperUrl) {
+				this.log('backfilling instapaper-url');
+				const { succeeded } = await syncNotes(this, token, 0, {
+					createFiles: false,
+					syncHighlights: false,
+					syncProperties: INSTAPAPER_URL_PROPERTY,
+				});
+				if (succeeded) {
+					await this.saveSettings({ backfilledInstapaperUrl: true });
+				}
+			}
+
 			const { cursor: newCursor, count } = await syncNotes(this, token, cursor, options);
 			result.notes = count;
 			if ((control?.saveCursor ?? true) && this.settings.account?.id === accountId) {

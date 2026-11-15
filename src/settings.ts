@@ -44,6 +44,7 @@ export interface InstapaperPluginSettings {
     frontmatter: FrontmatterSettings;
     highlightTemplate: string;
     appliedHighlightTemplate?: string;
+    backfilledInstapaperUrl?: boolean;
 }
 
 // Note! This needs to be kept in sync with the deep merge in loadSettings().
