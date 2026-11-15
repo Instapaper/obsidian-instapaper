@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Notes now include an `instapaper-url` property linking to the article in Instapaper. Existing notes get it the next time they're synced.
+- Notes are now matched to articles by their `instapaper-url` property, so synced notes can be renamed or moved anywhere in the vault, and articles renamed in Instapaper keep using the same note. Articles that share a title get separate notes. The first sync after upgrading adds `instapaper-url` to existing notes, which modifies each of them once.
 
 ### Changed
 
