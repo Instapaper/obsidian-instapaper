@@ -235,7 +235,11 @@ export default class InstapaperPlugin extends Plugin {
 
 	async connectAccount(token: InstapaperAccessToken, account: InstapaperAccount): Promise<InstapaperAccount> {
 		this.app.secretStorage.setSecret(TOKEN_SECRET_ID, encodeTokenSecret(account.id, token.key));
-		await this.saveSettings({ account });
+
+		// Another account's cursor would skip this account's earlier highlights.
+		await this.saveSettings(this.settings.account?.id === account.id
+			? { account }
+			: { account, notesCursor: 0 });
 
 		this.updateSyncInterval();
 		if (this.settings.syncOnStart) {
@@ -252,11 +256,7 @@ export default class InstapaperPlugin extends Plugin {
 
 	async disconnectAccount() {
 		this.app.secretStorage.deleteSecret(TOKEN_SECRET_ID);
-		await this.saveSettings({
-			account: undefined,
-			notesCursor: undefined,
-		});
-
+		await this.saveSettings({ account: undefined, notesCursor: 0 });
 		this.clearSyncInterval();
 	}
 
@@ -280,11 +280,12 @@ export default class InstapaperPlugin extends Plugin {
 
 		this.syncInProgress = true;
 		this.log(`synchronizing (${reason}) @ ${cursor}`);
+		const accountId = this.settings.account?.id;
 
 		try {
 			const { cursor: newCursor, count } = await syncNotes(this, token, cursor, options);
 			result.notes = count;
-			if (control?.saveCursor ?? true) {
+			if ((control?.saveCursor ?? true) && this.settings.account?.id === accountId) {
 				await this.saveSettings({ notesCursor: newCursor });
 			}
 			if (options?.updateHighlightTemplate || ((options?.syncHighlights ?? true) && result.notes > 0)) {

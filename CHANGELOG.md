@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New note filenames omit characters that break Obsidian links (`^`, `[`, `]`) and collapse redundant whitespace. Existing notes keep their names.
 - Minimum Obsidian version requirement updated to 1.11.4.
 
+### Fixed
+
+- Connecting a different Instapaper account now syncs that account's highlights from the beginning instead of continuing from where the previous account left off.
+
 ## [1.3.0] - 2026-09-26
 
 ### Changed
