@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The Instapaper access token is now kept in Obsidian's secure secret storage instead of the plugin's settings file. Existing tokens move automatically. Secrets aren't synced between devices, so each device needs to connect its own account.
+- New note filenames omit characters that break Obsidian links (`^`, `[`, `]`) and collapse redundant whitespace. Existing notes keep their names.
 - Minimum Obsidian version requirement updated to 1.11.4.
 
 ## [1.3.0] - 2026-09-26
