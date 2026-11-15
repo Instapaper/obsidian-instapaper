@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- The Instapaper access token is now kept in Obsidian's secure secret storage instead of the plugin's settings file. Existing tokens move automatically. Secrets aren't synced between devices, so each device needs to connect its own account.
+- Minimum Obsidian version requirement updated to 1.11.4.
+
 ## [1.3.0] - 2026-09-26
 
 ### Changed

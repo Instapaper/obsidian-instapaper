@@ -1,6 +1,6 @@
 import { Keymap, Notice, Plugin, TFolder } from 'obsidian';
 import { InstapaperAPI, type InstapaperAccessToken, type InstapaperAccount } from './api'
-import { DeviceAuthorizationError } from './oauth'
+import { DeviceAuthorizationError, decodeTokenSecret, encodeTokenSecret } from './oauth'
 import { DEFAULT_SETTINGS, InstapaperPluginSettings, InstapaperSettingTab, LEGACY_HIGHLIGHT_TEMPLATE } from './settings'
 import { SyncError, syncNotes, type SyncNotesOptions } from './notes';
 
@@ -8,12 +8,27 @@ type SyncResult = {
 	notes: number;
 }
 
+const TOKEN_SECRET_ID = 'instapaper-access-token';
+
 export default class InstapaperPlugin extends Plugin {
 	settings!: InstapaperPluginSettings;
 	api!: InstapaperAPI;
 	settingTab?: InstapaperSettingTab;
 	syncInterval?: number;
 	syncInProgress = false;
+
+	/**
+	 * The access token lives in this device's SecretStorage, while `account`
+	 * syncs with data.json. A device is connected only when its token was
+	 * issued for that account, so it never pairs with another account
+	 * connected on a different device.
+	 */
+	get token(): InstapaperAccessToken | undefined {
+		const account = this.settings.account;
+		const secret = this.app.secretStorage.getSecret(TOKEN_SECRET_ID);
+		const key = account && secret && decodeTokenSecret(secret, account.id);
+		return key ? { key } : undefined;
+	}
 
 	async onload() {
 		this.api = new InstapaperAPI(
@@ -28,7 +43,7 @@ export default class InstapaperPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on('url-menu', (menu, url) => {
-				const token = this.settings.token;
+				const token = this.token;
 				if (!token) return;
 
 				menu.addItem((item) => {
@@ -62,7 +77,7 @@ export default class InstapaperPlugin extends Plugin {
 					return;
 				}
 
-				const token = this.settings.token;
+				const token = this.token;
 				if (!token) return;
 
 				menu.addItem((item) => {
@@ -87,7 +102,7 @@ export default class InstapaperPlugin extends Plugin {
 			id: 'sync',
 			name: 'Sync',
 			checkCallback: (checking: boolean) => {
-				const token = this.settings.token;
+				const token = this.token;
 				if (!token) {
 					return false;
 				}
@@ -106,7 +121,7 @@ export default class InstapaperPlugin extends Plugin {
 		})
 
 		// Optionally run an immediate sync as soon as the workspace is ready.
-		if (this.settings.syncOnStart && this.settings.token) {
+		if (this.settings.syncOnStart && this.token) {
 			this.app.workspace.onLayoutReady(() => {
 				this.runSync('on start').catch((e: unknown) => {
 					this.log('Sync on start failed:', e);
@@ -145,6 +160,7 @@ export default class InstapaperPlugin extends Plugin {
 		type LegacySettings = {
 			notesFrequency?: number;
 			notesSyncOnStart?: boolean;
+			token?: InstapaperAccessToken;
 		};
 
 		const data = await this.loadData() as
@@ -161,6 +177,18 @@ export default class InstapaperPlugin extends Plugin {
 			if (Object.hasOwnProperty.call(data, 'notesSyncOnStart')) {
 				data.syncOnStart = data.notesSyncOnStart;
 				delete data.notesSyncOnStart;
+				needsSave = true;
+			}
+
+			// Move tokens saved in data.json into SecretStorage, keeping any token
+			// this device already has for the account.
+			if (Object.hasOwnProperty.call(data, 'token')) {
+				const { token, account } = data;
+				if (token?.key && account &&
+					!decodeTokenSecret(this.app.secretStorage.getSecret(TOKEN_SECRET_ID) ?? '', account.id)) {
+					this.app.secretStorage.setSecret(TOKEN_SECRET_ID, encodeTokenSecret(account.id, token.key));
+				}
+				delete data.token;
 				needsSave = true;
 			}
 
@@ -206,7 +234,8 @@ export default class InstapaperPlugin extends Plugin {
 	// ACCOUNT
 
 	async connectAccount(token: InstapaperAccessToken, account: InstapaperAccount): Promise<InstapaperAccount> {
-		await this.saveSettings({ token, account });
+		this.app.secretStorage.setSecret(TOKEN_SECRET_ID, encodeTokenSecret(account.id, token.key));
+		await this.saveSettings({ account });
 
 		this.updateSyncInterval();
 		if (this.settings.syncOnStart) {
@@ -222,8 +251,8 @@ export default class InstapaperPlugin extends Plugin {
 	}
 
 	async disconnectAccount() {
+		this.app.secretStorage.deleteSecret(TOKEN_SECRET_ID);
 		await this.saveSettings({
-			token: undefined,
 			account: undefined,
 			notesCursor: undefined,
 		});
@@ -241,7 +270,7 @@ export default class InstapaperPlugin extends Plugin {
 		const result: SyncResult = { notes: 0 };
 		const cursor = (control?.resync ?? false) ? 0 : this.settings.notesCursor;
 
-		const token = this.settings.token;
+		const token = this.token;
 		if (!token) return result;
 
 		if (this.syncInProgress) {

@@ -44,3 +44,18 @@ export async function pollDeviceAuthorization<T>(
 
     throw new DeviceAuthorizationError('Instapaper authorization was canceled');
 }
+
+/** The stored token secret pairs the token with the account it was issued for. */
+export function encodeTokenSecret(accountId: number, token: string): string {
+    return JSON.stringify({ accountId, token });
+}
+
+/** Returns the token only when the secret was stored for `accountId`. */
+export function decodeTokenSecret(secret: string, accountId: number): string | undefined {
+    try {
+        const { accountId: id, token } = JSON.parse(secret) as { accountId?: unknown; token?: unknown };
+        return id === accountId && typeof token === 'string' && token ? token : undefined;
+    } catch {
+        return undefined;
+    }
+}
