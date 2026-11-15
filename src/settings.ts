@@ -1,6 +1,6 @@
 import { App, ButtonComponent, PluginSettingTab, Setting, SettingGroup, TextAreaComponent, TextComponent, TFolder, normalizePath } from "obsidian";
 import InstapaperPlugin from "./main";
-import type { InstapaperAccessToken, InstapaperAccount, InstapaperDeviceAuthorization } from "./api";
+import type { InstapaperAccount, InstapaperDeviceAuthorization } from "./api";
 import { pollDeviceAuthorization } from "./oauth";
 
 export interface FrontmatterField {
@@ -36,7 +36,6 @@ const DEFAULT_HIGHLIGHT_TEMPLATE = `> {{text}} {{blockId}}
 {{/note}}`;
 
 export interface InstapaperPluginSettings {
-    token?: InstapaperAccessToken;
     account?: InstapaperAccount;
     syncFrequency: number;
     syncOnStart: boolean;
@@ -85,7 +84,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
 
         this.addAccountSettings(containerEl);
 
-        if (this.plugin.settings.account) {
+        if (this.plugin.token) {
             this.addSyncSettings(containerEl);
             this.addNotesSettings(containerEl);
             this.addFrontmatterSettings(containerEl);
@@ -96,7 +95,7 @@ export class InstapaperSettingTab extends PluginSettingTab {
         const setting = new Setting(containerEl)
             .setName('Instapaper account');
 
-        if (this.plugin.settings.account) {
+        if (this.plugin.token && this.plugin.settings.account) {
             setting
                 .setDesc(`Connected as: ${this.plugin.settings.account.username}`)
                 .addButton((button) => {

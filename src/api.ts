@@ -11,7 +11,6 @@ const DEFAULT_OPTIONS: InstapaperClientOptions = {
 
 export type InstapaperAccessToken = {
     key: string;
-    secret?: string; // unused, retained for downgrade safety
 }
 
 export type InstapaperAccount = {

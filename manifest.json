@@ -2,7 +2,7 @@
 	"id": "instapaper",
 	"name": "Instapaper",
 	"version": "1.3.0",
-	"minAppVersion": "1.11.0",
+	"minAppVersion": "1.11.4",
 	"description": "Sync notes and highlights from Instapaper.",
 	"author": "Instapaper",
 	"authorUrl": "https://www.instapaper.com",

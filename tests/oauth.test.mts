@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { DeviceAuthorizationError, pollDeviceAuthorization } from '../src/oauth.ts';
+import { DeviceAuthorizationError, decodeTokenSecret, encodeTokenSecret, pollDeviceAuthorization } from '../src/oauth.ts';
 
 const waits = [];
 const responses = ['authorization_pending', 'slow_down', { token: 'ok' }];
@@ -31,3 +31,10 @@ await assert.rejects(
     ),
     (error) => error instanceof DeviceAuthorizationError && error.message.startsWith('Instapaper authorization expired'),
 );
+
+const secret = encodeTokenSecret(42, 'abc');
+assert.equal(decodeTokenSecret(secret, 42), 'abc');
+assert.equal(decodeTokenSecret(secret, 7), undefined);
+for (const bad of ['', 'abc', 'null', '{"accountId":42}', '{"accountId":42,"key":"abc"}', '{"accountId":"42","token":"abc"}']) {
+    assert.equal(decodeTokenSecret(bad, 42), undefined, String(bad));
+}
