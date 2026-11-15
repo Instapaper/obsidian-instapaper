@@ -3,6 +3,7 @@ import Mustache from "mustache";
 import type InstapaperPlugin from "./main";
 import type { InstapaperAccessToken, InstapaperBookmark, InstapaperHighlight } from "./api";
 import { applyArticleFrontmatter } from "./frontmatter";
+import { filenamesForArticle } from "./filename";
 
 // Disable HTML escaping. We render to Markdown.
 Mustache.escape = (text: string) => text;
@@ -176,16 +177,16 @@ async function fileForArticle(
     folder: string,
     create: boolean = true
 ): Promise<TFile | null> {
-    // Use a sanitized version of the article's title for our filename.
-    let name = (article.title ?? '').replace(/[\\/:<>?|*"]/gm, '').substring(0, 250).trim();
-    if (!name) {
-        name = `Untitled-${article.id}`;
-    }
-
+    const [name, ...legacyNames] = filenamesForArticle(article);
     const path = normalizePath(`${folder}/${name}.md`);
-    const file = vault.getFileByPath(path);
+    // Prefer the legacy name when both exist so an existing note cannot be
+    // shadowed by a newly generated name.
+    const file = legacyNames
+        .map(name => vault.getFileByPath(normalizePath(`${folder}/${name}.md`)))
+        .find(file => file !== null)
+        ?? vault.getFileByPath(path);
 
-    return file || (create ? vault.create(path, '') : null);
+    return file ?? (create ? vault.create(path, '') : null);
 }
 
 function linkForHighlight(highlight: InstapaperHighlight): string {
